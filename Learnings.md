@@ -158,6 +158,23 @@ CREATE TABLE games (
 
 ## Known Issues & Solutions
 
+### Issue: Frontend JS Changes Not Visible After Deploy
+
+**Symptoms**: Updated files like `dist/js/tabs/plays.js` appear unchanged on server after running deploy.
+
+**Root Causes**:
+1. Relative deploy source path depended on current working directory.
+2. Rsync quick-check (size + mtime) can skip content changes in edge cases.
+
+**Fix**:
+- Resolve deploy source path relative to `ionos_deploy.sh`.
+- Use checksum-based sync and itemized output:
+    - `--checksum`
+    - `--itemize-changes`
+- Add asset version query params in `dist/bgstats-dashboard.html` (for example `plays.js?v=20260402`) to bypass stale browser/CDN caches after deploy.
+
+**Code Location**: `ionos_deploy.sh`
+
 ### Issue: Plays Count Mismatch (3763 vs 3972)
 
 **Root Cause**: Frontend `loadPlays()` used INNER JOIN, silently dropping 209 unmatched plays.

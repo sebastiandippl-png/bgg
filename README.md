@@ -30,3 +30,6 @@ All dashboard data comes from BGG sync endpoints.
 - Requires PHP with SQLite3 extension.
 - Requires outbound access to BGG XML API.
 - Keep `BGSTATS_BGG_API_KEY` server-side.
+- Deploy with `./ionos_deploy.sh` from the project root (or any directory). The script now resolves `dist/` relative to the script location.
+- The deploy uses checksum comparison and itemized rsync output, so changed assets like `dist/js/tabs/plays.js` are reliably uploaded and visible in deploy logs.
+- Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260402` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.

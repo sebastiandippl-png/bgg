@@ -22,6 +22,13 @@ IONOS_PASSWORD="${IONOS_PASSWORD:-}"
 REMOTE_PATH="${REMOTE_PATH:-bgstats/}"
 DIST_PATH="${DIST_PATH:-dist}"
 
+# Resolve dist path relative to script directory unless absolute path is provided.
+if [[ "$DIST_PATH" = /* ]]; then
+    DIST_SOURCE="$DIST_PATH"
+else
+    DIST_SOURCE="$SCRIPT_DIR/$DIST_PATH"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -37,7 +44,7 @@ if [ -z "$IONOS_HOST" ] || [ -z "$IONOS_USER" ]; then
 fi
 
 # Check local files
-if [ ! -d "$DIST_PATH" ]; then
+if [ ! -d "$DIST_SOURCE" ]; then
     echo -e "${RED}Error: dist/ folder not found${NC}"
     exit 1
 fi
@@ -76,18 +83,27 @@ P bgg.db
 P db_storage/
 EOF
 
-RSYNC_OPTS="-avz --delete --exclude='.git' --exclude='node_modules' --exclude='*.swp' --filter=._$FILTER_FILE"
+RSYNC_OPTS=(
+    -avz
+    --delete
+    --checksum
+    --itemize-changes
+    --exclude='.git'
+    --exclude='node_modules'
+    --exclude='*.swp'
+    --filter="merge $FILTER_FILE"
+)
 
 if [ -n "$IONOS_PASSWORD" ] && command -v sshpass &> /dev/null; then
     # Use password auth via sshpass
-    sshpass -p "$IONOS_PASSWORD" rsync $RSYNC_OPTS \
+    sshpass -p "$IONOS_PASSWORD" rsync "${RSYNC_OPTS[@]}" \
         -e "ssh -o StrictHostKeyChecking=accept-new" \
-        "$DIST_PATH/" "$IONOS_USER@$IONOS_HOST:$REMOTE_PATH"
+        "$DIST_SOURCE/" "$IONOS_USER@$IONOS_HOST:$REMOTE_PATH"
 else
     # Use key-based auth
-    rsync $RSYNC_OPTS \
+    rsync "${RSYNC_OPTS[@]}" \
         -e "ssh -o StrictHostKeyChecking=accept-new" \
-        "$DIST_PATH/" "$IONOS_USER@$IONOS_HOST:$REMOTE_PATH"
+        "$DIST_SOURCE/" "$IONOS_USER@$IONOS_HOST:$REMOTE_PATH"
 fi
 
 if [ $? -eq 0 ]; then
