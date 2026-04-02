@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<plays>
+<play id="112272067" date="2026-04-01" quantity="1" length="0" incomplete="0" nowinstats="0" location="">
+			<item name="Royal Visit" objecttype="thing" objectid="22245">
+				<subtypes>
+										<subtype value="boardgame" />
+									</subtypes>
+			</item>
+									<players>
+									<player username="" userid="0" name="Anne" startposition="" color="" score="" new="0" rating="0" win="1" />
+						<player username="sebbes" userid="1385815" name="Sebastian" startposition="" color="" score="" new="0" rating="0" win="0" />
+						</players>
+					</play>
+</plays>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<item objecttype="thing" objectid="268586" subtype="boardgame" collid="59791688">
+	<name sortindex="1">6 nimmt! 25 Jahre</name>
+		<yearpublished>2019</yearpublished>			<image>https://cf.geekdo-images.com/DFeZsC973xdZ1CKUzmjAUw__original/img/Tq8bVKV-ihLPfFPpf8FjfTpXiZk=/0x0/filters:format(jpeg)/pic4496538.jpg</image>
+		<thumbnail>https://cf.geekdo-images.com/DFeZsC973xdZ1CKUzmjAUw__small/img/TTIPiPwQpowcHjYMxtk920ZwR3c=/fit-in/200x150/filters:strip_icc()/pic4496538.jpg</thumbnail>
+		<stats minplayers="2"																	maxplayers="10"																	minplaytime="45"																	maxplaytime="45"																	playingtime="45"																	numowned="7192" >
+				<rating value="7">			<usersrated value="3251" />			<average value="7.25702" />
+			<bayesaverage value="6.48028" />			<stddev value="1.26052" />
+			<median value="0" />			<ranks>
+												<rank type="subtype" id="1" name="boardgame" friendlyname="Board Game Rank" value="1358" bayesaverage="6.48028" />
+																<rank type="family" id="5498" name="partygames" friendlyname="Party Game Rank" value="63" bayesaverage="6.79041" />
+								<rank type="family" id="5499" name="familygames" friendlyname="Family Game Rank" value="365" bayesaverage="6.61933" />
+											</ranks>		</rating>
+			</stats>	<status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0"  preordered="0" lastmodified="2021-02-14 04:55:01" />
+	<numplays>11</numplays>							</item>
+</items>

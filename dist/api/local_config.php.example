@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);
+
+return [
+    // Copy this file to local_config.php and set your real key there.
+    // Keep local_config.php out of version control.
+    'BGSTATS_BGG_API_KEY' => '',
+    'BGSTATS_GOOGLE_CLIENT_ID' => '',
+    'BGSTATS_ADMIN_EMAIL' => '',
+];

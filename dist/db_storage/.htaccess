@@ -1,0 +1,9 @@
+# Deny direct access to stored data files in this directory
+<FilesMatch "\.(db|sqlite|json)$">
+    Deny from all
+</FilesMatch>
+
+# Allow access to PHP files only through API endpoints
+<FilesMatch "\.(php)$">
+    Allow from all
+</FilesMatch>

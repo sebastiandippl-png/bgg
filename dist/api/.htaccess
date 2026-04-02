@@ -1,0 +1,13 @@
+# API Endpoint Protection
+# Force HTTPS if available
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Enforce HTTPS in production
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Deny direct access to files, only allow through HTTP requests
+<FilesMatch "\.(php)$">
+    Allow from all
+</FilesMatch>

@@ -1,0 +1,22 @@
+# Local secret config for production hosts without env var support
+dist/api/local_config.php
+ionos_deploy.local.conf
+
+# Runtime database files
+dist/bgg.db
+dist/db_storage/*.db
+
+# Runtime cache and status files
+dist/db_storage/sync_cache/
+dist/db_storage/bgg_sync_status.json
+dist/db_storage/links.json
+
+# Local sample/runtime artifacts
+dist/db_storage/*.xml
+
+# Python virtual environments
+.venv/
+venv/
+
+# macOS
+.DS_Store
