@@ -3,7 +3,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
     let db = null;
     let SQL = null;
     let lastSyncedAt = null;
-    let eventsBound = false;
     let activeTabId = 'insights';
     const SYNC_BGG_GAMES_URL = 'api/sync_bgg_games.php';
     const SYNC_BGG_METADATA_URL = 'api/sync_bgg_metadata.php';
@@ -409,10 +408,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
     }
 
     function bindEvents() {
-        if (eventsBound) {
-            return;
-        }
-
         const navTabs = document.getElementById('nav-tabs');
         if (navTabs) {
             navTabs.addEventListener('click', event => {
@@ -461,7 +456,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
         }
 
         document.addEventListener('error', handleImageError, true);
-        eventsBound = true;
     }
 
     async function initSqlEngine() {
