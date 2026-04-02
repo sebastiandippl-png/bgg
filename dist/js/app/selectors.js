@@ -71,7 +71,15 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         const anneNames = new Set(['anne']);
         const sebastianNames = new Set(['seb', 'sebastian']);
+        const anneVsSebWindowDays = 30;
+        const anneVsSebCutoff = new Date();
+        anneVsSebCutoff.setDate(anneVsSebCutoff.getDate() - anneVsSebWindowDays);
         const anneVsSebStats = state.plays.reduce((accumulator, play) => {
+            const playDate = play.Date ? new Date(play.Date) : null;
+            if (!playDate || Number.isNaN(playDate.getTime()) || playDate < anneVsSebCutoff) {
+                return accumulator;
+            }
+
             const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
             if (scores.length === 0) {
                 return accumulator;
@@ -114,13 +122,19 @@ window.BGStatsSelectors = (function createSelectorModule() {
             sebastianWins: 0,
         });
 
+        const anneVsSebLeader = anneVsSebStats.anneWins === anneVsSebStats.sebastianWins
+            ? null
+            : (anneVsSebStats.anneWins > anneVsSebStats.sebastianWins ? 'anne' : 'sebastian');
+
         const anneVsSeb = {
             playsCount: anneVsSebStats.playsCount,
             anneWins: anneVsSebStats.anneWins,
             sebastianWins: anneVsSebStats.sebastianWins,
-            leader: anneVsSebStats.anneWins === anneVsSebStats.sebastianWins
-                ? null
-                : (anneVsSebStats.anneWins > anneVsSebStats.sebastianWins ? 'anne' : 'sebastian'),
+            leader: anneVsSebLeader,
+            windowDays: anneVsSebWindowDays,
+            leaderLabel: anneVsSebLeader === 'anne'
+                ? 'Anne leads'
+                : (anneVsSebLeader === 'sebastian' ? 'Sebastian leads' : 'Currently tied'),
         };
 
         return {

@@ -46,16 +46,20 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML
     const sebWinsHighlight = anneVsSeb && anneVsSeb.leader === 'sebastian'
         ? 'text-emerald-400 font-bold'
         : 'text-gray-200';
+    const anneVsSebLeaderClass = anneVsSeb && anneVsSeb.leader
+        ? 'text-emerald-300 font-semibold'
+        : 'text-gray-300';
 
     const anneVsSebMarkup = `
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
             <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Anne vs. Sebastian</h3>
-            <p class="text-xs text-gray-500 mb-4">Only plays with exactly Anne + Sebastian</p>
+            <p class="text-xs text-gray-500 mb-4">Last ${escapeHTML(anneVsSeb.windowDays || 30)} days, only plays with exactly Anne + Sebastian</p>
             <p class="text-4xl font-bold text-cyan-400">${escapeHTML(anneVsSeb.playsCount)}</p>
             <p class="text-xs text-gray-500 mt-1 mb-4">Number of plays</p>
             <div class="space-y-1 text-sm">
                 <p>Anne Wins: <span class="${anneWinsHighlight}">${escapeHTML(anneVsSeb.anneWins)}</span></p>
                 <p>Sebastian Wins: <span class="${sebWinsHighlight}">${escapeHTML(anneVsSeb.sebastianWins)}</span></p>
+                <p class="mt-2">Winner: <span class="${anneVsSebLeaderClass}">${escapeHTML(anneVsSeb.leaderLabel || 'Currently tied')}</span></p>
             </div>
         </div>`;
 
