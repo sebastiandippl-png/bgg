@@ -10,16 +10,6 @@ Behavior:
 - `GET` returns the SQLite binary.
 - Direct browser access is blocked; requests must include `X-Requested-With: XMLHttpRequest`.
 
-### GET /api/bgg_proxy.php
-Server-side proxy for selected BoardGameGeek XML API endpoints.
-
-Allowed endpoint values:
-- `thing`
-- `search`
-- `hot`
-
-The API token is injected server-side and never exposed to the browser.
-
 ### POST /api/sync_bgg.php
 Admin-only sync endpoint that fetches collection and plays data for user `sebbes` and rebuilds `bgg.db`.
 
