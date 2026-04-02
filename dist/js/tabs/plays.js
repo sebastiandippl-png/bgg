@@ -5,6 +5,24 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, escapeHTML, isValid
     recentPlays.forEach(play => {
         const game = play.game;
         const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+        const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
+
+        const uniquePlayerNames = [...new Set(scores
+            .map(score => String(score.playerName || '').trim())
+            .filter(name => name !== ''))];
+
+        const winnerNames = [...new Set(scores
+            .filter(score => score.winner === true || score.winner === 1 || score.winner === '1')
+            .map(score => String(score.playerName || '').trim())
+            .filter(name => name !== ''))];
+
+        const coPlayersText = uniquePlayerNames.length > 0
+            ? uniquePlayerNames.join(', ')
+            : 'No data';
+
+        const winnersText = winnerNames.length > 0
+            ? winnerNames.join(', ')
+            : 'Unknown';
 
         let thumbnailUrl = placeholderSvg;
         if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
@@ -28,6 +46,8 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, escapeHTML, isValid
                         <div class="text-sm text-gray-400 space-y-2">
                             <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
                             <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
+                            <p><span class="text-gray-500">👥 Players:</span> ${escapeHTML(coPlayersText)}</p>
+                            <p><span class="text-gray-500">🏆 Winner:</span> ${escapeHTML(winnersText)}</p>
                         </div>
                     </div>
                 </div>
