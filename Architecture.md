@@ -7,6 +7,7 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 - Play statistics and player insights (h-index, total plays, owned games count)
 - Three-stage sync pipeline: Get Games → Get Metadata → Get Plays
 - Full collection ingestion with ownership tracking for insights
+- Historical day snapshots in the OnceUpon tab (today-7d, today-1y, today-5y)
 
 **Core Tech Stack:**
 - **Backend**: PHP + SQLite3 (no ORM)
@@ -99,6 +100,16 @@ set_time_limit(0); // No timeout
 Admin user clicks "Get Games" → "Get Metadata" → "Get Plays + Build DB" buttons sequentially.
 
 For quick updates between full syncs, admin can click `Get Last Plays.` to append only new plays from the last week.
+
+### OnceUpon Tab Flow
+
+- Selector: `getOnceUponViewModel(state)` in `dist/js/app/selectors.js`
+- Renderer: `renderOnceUponTab(...)` in `dist/js/tabs/onceupon.js`
+- Card dates are resolved as exact date keys (`YYYY-MM-DD`) for:
+  - today minus 7 days
+  - today minus 1 year
+  - today minus 5 years
+- Matching plays are displayed with the same card detail format as Last Plays (date, duration, players, winner).
 
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html

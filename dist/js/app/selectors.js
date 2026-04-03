@@ -203,6 +203,73 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function toDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function getOnceUponViewModel(state) {
+        const gamesById = new Map(state.games.map(game => [game.id, game]));
+        const today = new Date();
+
+        const oneWeekAgo = new Date(today);
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const fiveYearsAgo = new Date(today);
+        fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+
+        const dayCards = [
+            {
+                id: 'week_ago',
+                title: 'Played Today One Week Ago',
+                dateLabel: toDateKey(oneWeekAgo),
+                targetDateKey: toDateKey(oneWeekAgo),
+                titleClass: 'text-cyan-300'
+            },
+            {
+                id: 'year_ago',
+                title: 'Played Today One Year Ago',
+                dateLabel: toDateKey(oneYearAgo),
+                targetDateKey: toDateKey(oneYearAgo),
+                titleClass: 'text-fuchsia-300'
+            },
+            {
+                id: 'five_years_ago',
+                title: 'Played Today 5 Years Ago',
+                dateLabel: toDateKey(fiveYearsAgo),
+                targetDateKey: toDateKey(fiveYearsAgo),
+                titleClass: 'text-amber-300'
+            }
+        ];
+
+        const cards = dayCards.map(card => {
+            const plays = state.plays
+                .filter(play => String(play.Date || '') === card.targetDateKey)
+                .sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0))
+                .map(play => ({
+                    ...play,
+                    game: gamesById.get(play.gameId) || null
+                }));
+
+            return {
+                id: card.id,
+                title: card.title,
+                dateLabel: card.dateLabel,
+                titleClass: card.titleClass,
+                plays
+            };
+        });
+
+        return {
+            cards
+        };
+    }
+
     function toJsonStructure(value, depth) {
         const currentDepth = depth || 0;
         if (currentDepth > 6) return '...';
@@ -414,6 +481,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
+        getOnceUponViewModel,
         getNextplayViewModel,
         getLastRecordedPlayDate,
         getBggSchemaViewModel

@@ -18,6 +18,11 @@ Thing metadata sync also stores `games.best_with` using `poll-summary` values (f
 
 The header also includes `Get Last Plays.` for incremental sync: it fetches only last-week plays and inserts only new play rows into existing tables without rebuilding `bgg.db`.
 
+The `OnceUpon` tab shows three day-based cards with full play details (duration, players, winners):
+- played today one week ago
+- played today one year ago
+- played today 5 years ago
+
 ## Project Structure
 
 - `dist/bgstats-dashboard.html`: main dashboard UI

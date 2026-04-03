@@ -330,6 +330,17 @@ window.BGStatsDashboard = (function createDashboardModule() {
             return;
         }
 
+        if (tabId === 'onceupon' && typeof window.renderOnceUponTab === 'function') {
+            window.renderOnceUponTab({
+                onceUponData: window.BGStatsSelectors.getOnceUponViewModel(state),
+                escapeHTML,
+                isValidImageUrl,
+                getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
+                targetId: 'onceupon-content'
+            });
+            return;
+        }
+
         if (tabId === 'nextplay' && typeof window.renderNextplayTab === 'function') {
             const viewModel = window.BGStatsSelectors.getNextplayViewModel(state);
             window.renderNextplayTab({
@@ -359,6 +370,8 @@ window.BGStatsDashboard = (function createDashboardModule() {
         content.classList.remove('hidden');
         if (tabId === 'nextplay') {
             button.classList.add('border-b-2', 'border-emerald-500');
+        } else if (tabId === 'onceupon') {
+            button.classList.add('border-b-2', 'border-cyan-500');
         } else if (tabId === 'schema') {
             button.classList.add('border-b-2', 'border-yellow-500');
         } else {

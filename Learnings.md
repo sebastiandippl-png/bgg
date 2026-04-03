@@ -168,6 +168,18 @@ CREATE TABLE games (
 
 ## Known Issues & Solutions
 
+### OnceUpon Uses Exact Date Keys, Not Week Buckets
+
+**Requirement**: Show plays for "today one week/year/five years ago".
+
+**Implementation**:
+- Build exact `YYYY-MM-DD` keys for `today-7d`, `today-1y`, `today-5y`.
+- Match against `play.Date` exactly.
+
+**Why**: This keeps the feature deterministic and aligned with user expectation for specific historical day snapshots.
+
+**Code Location**: `dist/js/app/selectors.js` → `getOnceUponViewModel()`
+
 ### Issue: Need Fast Recent Plays Sync Without Rebuilding DB
 
 **Requirement**: Fetch only recent plays and avoid destructive database rebuild.
