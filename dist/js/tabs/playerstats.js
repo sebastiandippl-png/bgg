@@ -166,7 +166,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                     return '<div class="flex items-center gap-3 text-sm">'
                         + '<span class="text-xs text-gray-600 w-5 text-right shrink-0">' + (index + 1) + '.</span>'
                         + '<span class="flex-1 min-w-0 truncate">' + gameLink(entry.game, entry.gameName) + '</span>'
-                        + '<span class="text-amber-400 text-xs shrink-0">' + entry.wins + ' win' + (entry.wins !== 1 ? 's' : '') + '</span>'
+                        + '<span class="text-amber-400 text-xs shrink-0">' + entry.wins + ' win' + (entry.wins !== 1 ? 's' : '') + ' 🏆</span>'
                         + '</div>';
                 }).join('') + '</div>'
                 : '<div class="text-sm text-gray-500 italic">No wins recorded yet.</div>')
@@ -199,7 +199,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         + '<span class="text-gray-500 shrink-0 w-24 tabular-nums">' + fmt(play.Date) + '</span>'
                         + '<span class="flex-1 min-w-0">' + gameLink(play.game, play.Game) + '</span>'
                         + '<span class="text-gray-400 shrink-0">' + (scoreValue ? 'Score ' + escapeHTML(scoreValue) : 'No score') + '</span>'
-                        + '<span class="' + (play.isWin ? 'text-amber-400' : 'text-gray-600') + ' shrink-0">' + (play.isWin ? 'Win' : '') + '</span>'
+                        + '<span class="' + (play.isWin ? 'text-amber-400' : 'text-gray-600') + ' shrink-0">' + (play.isWin ? '🏆 Win' : '') + '</span>'
                         + '</div>';
                 }).join('') + '</div>'
                 : '<div class="text-sm text-gray-500 italic">No plays found for this player.</div>')

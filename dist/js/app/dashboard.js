@@ -428,7 +428,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
             element.classList.add('hidden');
         });
         document.querySelectorAll('#nav-tabs button').forEach(button => {
-            button.classList.remove('tab-active', 'text-blue-400', 'border-b-2', 'border-emerald-500', 'border-yellow-500', 'border-cyan-500', 'border-violet-500', 'border-rose-500');
+            button.classList.remove('tab-active', 'text-blue-400');
         });
 
         const content = document.getElementById(`content-${tabId}`);
@@ -438,19 +438,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         }
 
         content.classList.remove('hidden');
-        if (tabId === 'nextplay') {
-            button.classList.add('border-b-2', 'border-emerald-500');
-        } else if (tabId === 'onceupon') {
-            button.classList.add('border-b-2', 'border-cyan-500');
-        } else if (tabId === 'gamestats') {
-            button.classList.add('border-b-2', 'border-violet-500');
-        } else if (tabId === 'playerstats') {
-            button.classList.add('border-b-2', 'border-rose-500');
-        } else if (tabId === 'schema') {
-            button.classList.add('border-b-2', 'border-yellow-500');
-        } else {
-            button.classList.add('tab-active', 'text-blue-400');
-        }
+        button.classList.add('tab-active', 'text-blue-400');
     }
 
     function switchTab(tabId, options = {}) {
