@@ -23,6 +23,8 @@ The `OnceUpon` tab shows three day-based cards with full play details (duration,
 - played today one year ago
 - played today 5 years ago
 
+Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`). Opening a URL with one of these hashes loads that tab directly.
+
 ## Project Structure
 
 - `dist/bgstats-dashboard.html`: main dashboard UI

@@ -9,6 +9,35 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'schema']);
+
+    function getTabIdFromHash() {
+        const hash = String(window.location.hash || '').replace(/^#/, '').trim();
+        if (!hash) {
+            return null;
+        }
+
+        const decoded = decodeURIComponent(hash);
+        if (TAB_IDS.has(decoded)) {
+            return decoded;
+        }
+
+        const match = decoded.match(/^tab=(.+)$/i);
+        if (match && TAB_IDS.has(match[1])) {
+            return match[1];
+        }
+
+        return null;
+    }
+
+    function updateHashForTab(tabId) {
+        const nextHash = `#${tabId}`;
+        if (window.location.hash === nextHash) {
+            return;
+        }
+
+        window.location.hash = tabId;
+    }
 
     function escapeHTML(value) {
         if (typeof window.escapeHTMLUtil === 'function') {
@@ -379,7 +408,17 @@ window.BGStatsDashboard = (function createDashboardModule() {
         }
     }
 
-    function switchTab(tabId) {
+    function switchTab(tabId, options = {}) {
+        const { skipHashUpdate = false } = options;
+
+        if (!TAB_IDS.has(tabId)) {
+            tabId = 'insights';
+        }
+
+        if (!skipHashUpdate) {
+            updateHashForTab(tabId);
+        }
+
         activeTabId = tabId;
         setActiveTabStyles(tabId);
 
@@ -437,6 +476,15 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 switchTab(button.dataset.tabId);
             });
         }
+
+        window.addEventListener('hashchange', () => {
+            const tabId = getTabIdFromHash();
+            if (!tabId || tabId === activeTabId) {
+                return;
+            }
+
+            switchTab(tabId, { skipHashUpdate: true });
+        });
 
         document.addEventListener('click', event => {
             const sortTrigger = event.target.closest('[data-sort-tab][data-sort-col]');
@@ -770,6 +818,10 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
     async function init() {
         bindEvents();
+        const tabFromHash = getTabIdFromHash();
+        if (tabFromHash) {
+            activeTabId = tabFromHash;
+        }
         updateLastSyncedInfo();
         await initSqlEngine();
 

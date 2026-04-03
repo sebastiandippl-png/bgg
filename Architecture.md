@@ -111,6 +111,13 @@ For quick updates between full syncs, admin can click `Get Last Plays.` to appen
   - today minus 5 years
 - Matching plays are displayed with the same card detail format as Last Plays (date, duration, players, winner).
 
+### Tab Deep Links
+
+- Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#schema`).
+- On app init, dashboard reads the current hash and sets the initial active tab.
+- On tab switch, dashboard updates the hash so links can be shared/bookmarked.
+- `hashchange` handling keeps browser back/forward navigation in sync with the active tab.
+
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html
 <button onclick="syncGames()">Get Games</button>

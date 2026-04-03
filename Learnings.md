@@ -180,6 +180,17 @@ CREATE TABLE games (
 
 **Code Location**: `dist/js/app/selectors.js` → `getOnceUponViewModel()`
 
+### Tab Deeplinks via Hash Routing
+
+**Implementation**:
+- Use URL hash values as tab IDs (`#plays`, `#onceupon`, etc.).
+- Parse hash on init and on `hashchange`.
+- Update hash whenever user switches tabs.
+
+**Benefit**: Tabs are directly shareable and browser back/forward remains meaningful.
+
+**Code Location**: `dist/js/app/dashboard.js`
+
 ### Issue: Need Fast Recent Plays Sync Without Rebuilding DB
 
 **Requirement**: Fetch only recent plays and avoid destructive database rebuild.
