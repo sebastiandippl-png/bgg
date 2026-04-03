@@ -32,7 +32,7 @@ write_bgg_sync_status([
     'state' => 'queued',
     'phase' => 'queued',
     'message' => 'Plays sync queued.',
-    'username' => BGG_SYNC_USERNAME,
+    'username' => get_bgg_sync_username(),
     'currentGames' => 0,
     'totalGames' => null,
     'currentPlays' => 0,
@@ -46,9 +46,9 @@ try {
         throw new RuntimeException('sync_cache_missing_games');
     }
 
-    $playsPayload = fetch_plays_from_bgg(BGG_SYNC_USERNAME, count($games));
+    $playsPayload = fetch_plays_from_bgg(get_bgg_sync_username(), count($games));
     write_bgg_sync_cache('plays', [
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'fetchedAt' => gmdate('c'),
         'plays' => $playsPayload['plays'],
         'players' => $playsPayload['players'],
@@ -60,7 +60,7 @@ try {
         'state' => 'complete',
         'phase' => 'complete',
         'message' => 'BGG sync completed.',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => $result['insertedGames'],
         'insertedPlays' => $result['insertedPlays'],
         'currentGames' => $result['insertedGames'],
@@ -72,7 +72,7 @@ try {
     echo json_encode([
         'success' => true,
         'step' => 'plays',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => $result['insertedGames'],
         'insertedPlays' => $result['insertedPlays'],
         'backupCreated' => !empty($result['backupPath']),
@@ -89,7 +89,7 @@ try {
         'state' => 'error',
         'phase' => 'error',
         'message' => $code,
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
     ]);
 
     http_response_code(500);

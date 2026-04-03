@@ -4,11 +4,30 @@ declare(strict_types=1);
 require_once __DIR__ . '/bgg_api.php';
 require_once __DIR__ . '/bgg_sync_status_store.php';
 
-const BGG_SYNC_USERNAME = 'sebbes';
 const BGG_MAX_POLL_ATTEMPTS = 15;
 const BGG_PLAYS_PER_PAGE = 100;
 const BGG_THING_BATCH_SIZE = 20;
 const BGG_THING_REQUEST_INTERVAL_SECONDS = 5.0;
+
+function get_bgg_sync_username(): string {
+    $username = trim((string)(getenv('BGSTATS_BGG_USERNAME') ?: ''));
+    if ($username !== '') {
+        return $username;
+    }
+
+    $configPath = __DIR__ . '/local_config.php';
+    if (is_file($configPath) && is_readable($configPath)) {
+        $config = require $configPath;
+        if (is_array($config)) {
+            $fromConfig = trim((string)($config['BGSTATS_BGG_USERNAME'] ?? ''));
+            if ($fromConfig !== '') {
+                return $fromConfig;
+            }
+        }
+    }
+
+    return '';
+}
 
 function write_sync_progress(array $payload): void {
     write_bgg_sync_status($payload);

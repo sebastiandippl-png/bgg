@@ -32,7 +32,7 @@ write_bgg_sync_status([
     'state' => 'queued',
     'phase' => 'queued',
     'message' => 'Sync request queued.',
-    'username' => BGG_SYNC_USERNAME,
+    'username' => get_bgg_sync_username(),
     'currentGames' => 0,
     'totalGames' => null,
     'currentPlays' => 0,
@@ -40,15 +40,15 @@ write_bgg_sync_status([
 ]);
 
 try {
-    $games = hydrate_games_with_bgg_details(fetch_owned_games_from_bgg(BGG_SYNC_USERNAME));
-    $playsPayload = fetch_plays_from_bgg(BGG_SYNC_USERNAME);
+    $games = hydrate_games_with_bgg_details(fetch_owned_games_from_bgg(get_bgg_sync_username()));
+    $playsPayload = fetch_plays_from_bgg(get_bgg_sync_username());
     $result = create_synced_bgg_database($games, $playsPayload['plays'], $playsPayload['players']);
 
     write_bgg_sync_status([
         'state' => 'complete',
         'phase' => 'complete',
         'message' => 'BGG sync completed.',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => $result['insertedGames'],
         'insertedPlays' => $result['insertedPlays'],
         'currentGames' => $result['insertedGames'],
@@ -59,7 +59,7 @@ try {
 
     echo json_encode([
         'success' => true,
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => $result['insertedGames'],
         'insertedPlays' => $result['insertedPlays'],
         'backupCreated' => !empty($result['backupPath']),
@@ -75,7 +75,7 @@ try {
         'state' => 'error',
         'phase' => 'error',
         'message' => $code,
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
     ]);
 
     http_response_code(500);

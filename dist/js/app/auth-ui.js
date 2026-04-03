@@ -10,7 +10,6 @@
     'use strict';
 
     const ADMIN_ELEMENTS = [
-        'admin-sync-bgg-btn',
         'admin-sync-games-btn',
         'admin-sync-metadata-btn',
         'admin-sync-plays-btn',

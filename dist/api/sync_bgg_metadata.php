@@ -32,7 +32,7 @@ write_bgg_sync_status([
     'state' => 'queued',
     'phase' => 'queued',
     'message' => 'Game metadata sync queued.',
-    'username' => BGG_SYNC_USERNAME,
+    'username' => get_bgg_sync_username(),
     'currentGames' => 0,
     'totalGames' => null,
     'currentPlays' => 0,
@@ -48,7 +48,7 @@ try {
 
     $hydratedGames = hydrate_games_with_bgg_details($games);
     write_bgg_sync_cache('games', [
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'fetchedAt' => (string)($gamesCache['fetchedAt'] ?? gmdate('c')),
         'metadataSyncedAt' => gmdate('c'),
         'games' => $hydratedGames,
@@ -60,7 +60,7 @@ try {
         'state' => 'complete',
         'phase' => 'metadata_complete',
         'message' => 'Game metadata fetched and cached.',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => count($hydratedGames),
         'insertedPlays' => 0,
         'currentGames' => count($hydratedGames),
@@ -72,7 +72,7 @@ try {
     echo json_encode([
         'success' => true,
         'step' => 'metadata',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => $result['insertedGames'],
         'insertedPlays' => $result['insertedPlays'],
         'publishDb' => true,
@@ -89,7 +89,7 @@ try {
         'state' => 'error',
         'phase' => 'error',
         'message' => $code,
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
     ]);
 
     http_response_code(500);

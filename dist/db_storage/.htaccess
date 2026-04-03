@@ -1,5 +1,5 @@
 # Deny direct access to stored data files in this directory
-<FilesMatch "\.(db|sqlite|json)$">
+<FilesMatch "\.(db|sqlite|json|xml)$">
     Deny from all
 </FilesMatch>
 

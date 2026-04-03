@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 // Secure API endpoint for serving the SQLite database to the client
 // Only serves to AJAX requests (requires X-Requested-With header)
 // Prevents direct browser downloads for security
@@ -9,7 +11,7 @@ header('Content-Security-Policy: default-src \'none\'');
 header('X-XSS-Protection: 1; mode=block');
 
 // Error response helper
-function respondError($code, $message) {
+function respondError(int $code, string $message): never {
     http_response_code($code);
     header('Content-Type: application/json');
     echo json_encode(['error' => $message]);
