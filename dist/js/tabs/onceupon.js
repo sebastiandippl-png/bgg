@@ -6,7 +6,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, escapeHTML
             return '<div class="p-4 text-gray-500 italic">No plays recorded on this date.</div>';
         }
 
-        let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">';
+        let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">';
 
         plays.forEach(play => {
             const game = play.game;
@@ -64,7 +64,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, escapeHTML
     }
 
     const html = `
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             ${cards.map(card => `
                 <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
                     <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/70">
