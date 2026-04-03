@@ -72,6 +72,7 @@ window.BGStatsData = (function createDataModule() {
         const hasIsBaseGameColumn = gameColumns.includes('isbasegame');
         const hasBggLastModifiedColumn = gameColumns.includes('bgg_lastmodified');
         const hasBestWithColumn = gameColumns.includes('best_with');
+        const hasRecommendedWithColumn = gameColumns.includes('recommended_with');
 
         const result = db.exec(
             `SELECT id, name, bggYear, minPlayerCount, maxPlayerCount, average_rating, modificationDate, bgg_rating,
@@ -80,7 +81,8 @@ window.BGStatsData = (function createDataModule() {
                 ${hasIsBaseGameColumn ? 'isBaseGame' : 'NULL as isBaseGame'},
                 urlThumb, maxPlayTime, minPlayTime, bggId, owned,
                      ${hasBggLastModifiedColumn ? 'bgg_lastmodified' : 'NULL as bgg_lastmodified'},
-                     ${hasBestWithColumn ? 'best_with' : 'NULL as best_with'}
+                     ${hasBestWithColumn ? 'best_with' : 'NULL as best_with'},
+                     ${hasRecommendedWithColumn ? 'recommended_with' : 'NULL as recommended_with'}
              FROM games`
         );
         if (result.length === 0) {
@@ -108,7 +110,8 @@ window.BGStatsData = (function createDataModule() {
                 owned: toBoolean(row[15]),
                 lastPlayed: lastPlayedByGameId[row[0]] || null,
                 urlThumb: row[11] || null,
-                bestWith: row[17] || null
+                bestWith: row[17] || null,
+                recommendedWith: row[18] || null
             };
         });
     }
