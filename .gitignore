@@ -20,3 +20,5 @@ venv/
 
 # macOS
 .DS_Store
+
+tools/bgg-play-rename
