@@ -30,13 +30,13 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML
     const lastModifiedMarkup = lastModifiedGame
         ? `
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
-            <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-4">Last Modified</h3>
+            <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-4">Last Added</h3>
             <a href="${lastModifiedUrl || '#'}" class="block hover:no-underline">
             <div class="w-full h-40 bg-gray-700 rounded mb-4 flex items-center justify-center overflow-hidden">
                 <img src="${lastModifiedThumb}" alt="${escapeHTML(lastModifiedGame.name)}" class="max-w-full max-h-full object-contain">
             </div>
             <p class="text-xl font-bold text-yellow-400">${escapeHTML(lastModifiedGame.name)}</p>
-            <p class="text-xs text-gray-500 mt-2">Modified: ${escapeHTML(lastModifiedGame.bggLastModified)}</p>
+            <p class="text-xs text-gray-500 mt-2">Added: ${escapeHTML(lastModifiedGame.bggLastModified)}</p>
             </a>
         </div>`
         : `
