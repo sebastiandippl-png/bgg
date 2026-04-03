@@ -9,7 +9,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'schema']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'playerstats', 'schema']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -44,6 +44,9 @@ window.BGStatsDashboard = (function createDashboardModule() {
         let subParam = null;
         if (tabId === 'gamestats' && window.BGStatsGameStats && window.BGStatsGameStats.selectedGameId) {
             subParam = String(window.BGStatsGameStats.selectedGameId);
+        }
+        if (tabId === 'playerstats' && window.BGStatsPlayerStats && window.BGStatsPlayerStats.selectedPlayerKey) {
+            subParam = String(window.BGStatsPlayerStats.selectedPlayerKey);
         }
         const nextHash = subParam ? `#${tabId}/${subParam}` : `#${tabId}`;
         if (window.location.hash === nextHash) {
@@ -398,11 +401,23 @@ window.BGStatsDashboard = (function createDashboardModule() {
             const selectedId = window.BGStatsGameStats ? window.BGStatsGameStats.selectedGameId : null;
             window.renderGameStatsTab({
                 allGames: state.games,
+                allPlayers: state.players,
                 gameStatsData: window.BGStatsSelectors.getGameStatsViewModel(state, selectedId),
                 escapeHTML,
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
                 targetId: 'gamestats-content'
+            });
+            return;
+        }
+
+        if (tabId === 'playerstats' && typeof window.renderPlayerStatsTab === 'function') {
+            const selectedPlayerKey = window.BGStatsPlayerStats ? window.BGStatsPlayerStats.selectedPlayerKey : null;
+            window.renderPlayerStatsTab({
+                allPlayers: state.players,
+                playerStatsData: window.BGStatsSelectors.getPlayerStatsViewModel(state, selectedPlayerKey),
+                escapeHTML,
+                targetId: 'playerstats-content'
             });
             return;
         }
@@ -413,7 +428,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
             element.classList.add('hidden');
         });
         document.querySelectorAll('#nav-tabs button').forEach(button => {
-            button.classList.remove('tab-active', 'text-blue-400', 'border-b-2', 'border-emerald-500', 'border-yellow-500', 'border-cyan-500');
+            button.classList.remove('tab-active', 'text-blue-400', 'border-b-2', 'border-emerald-500', 'border-yellow-500', 'border-cyan-500', 'border-violet-500', 'border-rose-500');
         });
 
         const content = document.getElementById(`content-${tabId}`);
@@ -429,6 +444,8 @@ window.BGStatsDashboard = (function createDashboardModule() {
             button.classList.add('border-b-2', 'border-cyan-500');
         } else if (tabId === 'gamestats') {
             button.classList.add('border-b-2', 'border-violet-500');
+        } else if (tabId === 'playerstats') {
+            button.classList.add('border-b-2', 'border-rose-500');
         } else if (tabId === 'schema') {
             button.classList.add('border-b-2', 'border-yellow-500');
         } else {
@@ -515,6 +532,15 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 const newGameId = getHashSubParam() || null;
                 if (window.BGStatsGameStats) {
                     window.BGStatsGameStats.setSelectedGameId(newGameId);
+                }
+                switchTab(tabId, { skipHashUpdate: true });
+                return;
+            }
+
+            if (tabId === 'playerstats') {
+                const newPlayerKey = getHashSubParam() || null;
+                if (window.BGStatsPlayerStats) {
+                    window.BGStatsPlayerStats.setSelectedPlayerKey(newPlayerKey);
                 }
                 switchTab(tabId, { skipHashUpdate: true });
                 return;
@@ -866,6 +892,11 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 const gameId = getHashSubParam();
                 if (gameId && window.BGStatsGameStats) {
                     window.BGStatsGameStats.setSelectedGameId(gameId);
+                }
+            } else if (tabFromHash === 'playerstats') {
+                const playerKey = getHashSubParam();
+                if (playerKey && window.BGStatsPlayerStats) {
+                    window.BGStatsPlayerStats.setSelectedPlayerKey(playerKey);
                 }
             }
         }

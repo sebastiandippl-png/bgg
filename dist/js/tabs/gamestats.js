@@ -83,6 +83,7 @@ window.BGStatsGameStats = (function createGameStatsModule() {
 
 window.renderGameStatsTab = function renderGameStatsTab(options) {
     var allGames = options.allGames;
+    var allPlayers = options.allPlayers;
     var gameStatsData = options.gameStatsData;
     var escapeHTML = options.escapeHTML;
     var isValidImageUrl = options.isValidImageUrl;
@@ -93,6 +94,41 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
     if (!container) { return; }
 
     window.BGStatsGameStats.setAllGames(allGames);
+
+    function getPlayerKeyByName(name) {
+        var normalizedName = String(name || '').trim().toLowerCase();
+        if (!normalizedName || !Array.isArray(allPlayers)) {
+            return null;
+        }
+
+        var match = allPlayers.find(function (player) {
+            return String(player.name || '').trim().toLowerCase() === normalizedName;
+        });
+
+        return match && match.key ? String(match.key) : null;
+    }
+
+    function renderLinkedPlayerName(name, extraClass) {
+        var safeName = escapeHTML(String(name || ''));
+        var playerKey = getPlayerKeyByName(name);
+        var className = extraClass ? ' class="' + extraClass + '"' : '';
+
+        if (!playerKey) {
+            return '<span' + className + '>' + safeName + '</span>';
+        }
+
+        return '<a href="#playerstats/' + encodeURIComponent(playerKey) + '"' + className + '>' + safeName + '</a>';
+    }
+
+    function renderLinkedPlayerList(names, extraClass) {
+        if (!Array.isArray(names) || names.length === 0) {
+            return '';
+        }
+
+        return names.map(function (name) {
+            return renderLinkedPlayerName(name, extraClass);
+        }).join('<span class="text-gray-700">, </span>');
+    }
 
     function renderSearchView() {
         return '<div class="max-w-xl mx-auto pt-8 pb-4 px-2 sm:px-4">'
@@ -146,12 +182,12 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
 
         var highestWithNames = fmtNum(highScore, 0);
         if (highScorePlayers.length > 0) {
-            highestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + escapeHTML(highScorePlayers.join(', ')) + '</span>';
+            highestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + renderLinkedPlayerList(highScorePlayers, 'text-gray-500 hover:text-gray-300 underline') + '</span>';
         }
 
         var lowestWithNames = fmtNum(lowScore, 0);
         if (lowScorePlayers.length > 0) {
-            lowestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + escapeHTML(lowScorePlayers.join(', ')) + '</span>';
+            lowestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + renderLinkedPlayerList(lowScorePlayers, 'text-gray-500 hover:text-gray-300 underline') + '</span>';
         }
 
         var placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
@@ -233,7 +269,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                     : '<span class="text-gray-700">0 wins</span>';
                 return '<div class="flex items-center gap-3 text-sm">'
                     + '<span class="text-xs text-gray-600 w-5 text-right shrink-0">' + (i + 1) + '.</span>'
-                    + '<span class="text-gray-200 flex-1 truncate">' + escapeHTML(p.name) + '</span>'
+                    + '<span class="text-gray-200 flex-1 truncate">' + renderLinkedPlayerName(p.name, 'text-gray-200 hover:text-blue-300 underline') + '</span>'
                     + '<span class="text-xs text-gray-500 shrink-0">' + p.plays + ' play' + (p.plays !== 1 ? 's' : '') + '</span>'
                     + '<span class="text-xs shrink-0 w-20 text-right">' + winText + '</span>'
                     + '</div>';
@@ -261,7 +297,8 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                             ? ' (' + escapeHTML(String(s.score)) + ')'
                             : '';
                         return '<span class="' + (isWin ? 'text-amber-400 font-medium' : 'text-gray-400') + '">'
-                            + escapeHTML(String(s.playerName || '')) + scoreText + (isWin ? '\u00a0\uD83C\uDFC6' : '')
+                            + renderLinkedPlayerName(String(s.playerName || ''), isWin ? 'text-amber-400 font-medium hover:text-amber-300 underline' : 'text-gray-400 hover:text-gray-200 underline')
+                            + scoreText + (isWin ? '\u00a0\uD83C\uDFC6' : '')
                             + '</span>';
                     }).join('<span class="text-gray-700">, </span>')
                     : '<span class="text-gray-700 italic">No player data</span>';

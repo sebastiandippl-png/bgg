@@ -570,6 +570,142 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function normalizePlayerName(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function getPlayerStatsViewModel(state, playerKey) {
+        if (playerKey === null || playerKey === undefined) {
+            return null;
+        }
+
+        const player = state.players.find(entry => String(entry.key) === String(playerKey));
+        if (!player) {
+            return null;
+        }
+
+        const gamesById = new Map(state.games.map(game => [game.id, game]));
+        const playerNameKey = normalizePlayerName(player.name);
+        const playerId = player.id ? String(player.id) : null;
+
+        function getMatchingScore(play) {
+            const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
+            return scores.find(score => {
+                const scoreId = String(score.playerRefId || '').trim();
+                const scoreName = normalizePlayerName(score.playerName);
+                if (playerId && scoreId === playerId) {
+                    return true;
+                }
+                return scoreName !== '' && scoreName === playerNameKey;
+            }) || null;
+        }
+
+        const playerPlays = state.plays
+            .map(play => {
+                const matchingScore = getMatchingScore(play);
+                if (!matchingScore) {
+                    return null;
+                }
+                return {
+                    ...play,
+                    game: gamesById.get(play.gameId) || null,
+                    matchingScore,
+                    isWin: matchingScore.winner === true || matchingScore.winner === 1 || matchingScore.winner === '1'
+                };
+            })
+            .filter(Boolean);
+
+        const playCount = playerPlays.length;
+        const sortedByDateAsc = [...playerPlays].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        const sortedByDateDesc = [...playerPlays].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const firstPlay = sortedByDateAsc[0] || null;
+        const lastPlay = sortedByDateDesc[0] || null;
+
+        const winsByGame = {};
+        playerPlays.forEach(play => {
+            if (!play.isWin) {
+                return;
+            }
+            const gameId = String(play.gameId || '');
+            if (!winsByGame[gameId]) {
+                winsByGame[gameId] = {
+                    gameId,
+                    gameName: play.Game,
+                    wins: 0,
+                    game: play.game
+                };
+            }
+            winsByGame[gameId].wins += 1;
+        });
+
+        const mostWonGames = Object.values(winsByGame)
+            .sort((a, b) => b.wins - a.wins || a.gameName.localeCompare(b.gameName))
+            .slice(0, 10);
+
+        const highScoreByGame = {};
+        state.plays.forEach(play => {
+            const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
+            scores.forEach(score => {
+                if (score.score === null || score.score === undefined || score.score === '') {
+                    return;
+                }
+                const numericScore = parseFloat(score.score);
+                if (!Number.isFinite(numericScore)) {
+                    return;
+                }
+                const gameId = String(play.gameId || '');
+                if (!(gameId in highScoreByGame) || numericScore > highScoreByGame[gameId]) {
+                    highScoreByGame[gameId] = numericScore;
+                }
+            });
+        });
+
+        const playerRecordGamesMap = {};
+        playerPlays.forEach(play => {
+            const matchingScore = play.matchingScore;
+            if (!matchingScore || matchingScore.score === null || matchingScore.score === undefined || matchingScore.score === '') {
+                return;
+            }
+
+            const numericScore = parseFloat(matchingScore.score);
+            const gameId = String(play.gameId || '');
+            if (!Number.isFinite(numericScore) || !(gameId in highScoreByGame) || numericScore !== highScoreByGame[gameId]) {
+                return;
+            }
+
+            if (!playerRecordGamesMap[gameId]) {
+                playerRecordGamesMap[gameId] = {
+                    gameId,
+                    gameName: play.Game,
+                    score: numericScore,
+                    game: play.game,
+                    lastAchievedOn: play.Date,
+                    timesMatched: 0
+                };
+            }
+
+            playerRecordGamesMap[gameId].timesMatched += 1;
+            if (String(play.Date || '') > String(playerRecordGamesMap[gameId].lastAchievedOn || '')) {
+                playerRecordGamesMap[gameId].lastAchievedOn = play.Date;
+            }
+        });
+
+        const recordHighGames = Object.values(playerRecordGamesMap)
+            .sort((a, b) => b.score - a.score || a.gameName.localeCompare(b.gameName));
+
+        const recentPlays = sortedByDateDesc.slice(0, 15);
+
+        return {
+            player,
+            playCount,
+            firstPlay,
+            lastPlay,
+            mostWonGames,
+            recordHighGames,
+            recentPlays
+        };
+    }
+
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
@@ -577,6 +713,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
         getNextplayViewModel,
         getLastRecordedPlayDate,
         getBggSchemaViewModel,
-        getGameStatsViewModel
+        getGameStatsViewModel,
+        getPlayerStatsViewModel
     };
 })();

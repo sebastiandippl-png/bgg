@@ -3,6 +3,10 @@ window.BGStatsData = (function createDataModule() {
         return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
     }
 
+    function normalizePlayerName(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
     function loadPlays(db) {
         const result = db.exec(`
             SELECT date(p.playDate) as Date, g.name as Game, p.durationMin as Duration, p.gameRefId as gameId, g.id as matchedGameId, p.rawJson, p.playerScores
@@ -121,11 +125,53 @@ window.BGStatsData = (function createDataModule() {
 
     function loadPlayers(db) {
         const playersResult = db.exec('SELECT id, name FROM players');
-        const playerMap = {};
+        const playersByKey = {};
+        const playersById = {};
+        const playersByName = {};
+
+        function registerPlayer(player) {
+            playersByKey[player.key] = player;
+            if (player.id) {
+                playersById[player.id] = player;
+            }
+            const normalizedName = normalizePlayerName(player.name);
+            if (normalizedName) {
+                playersByName[normalizedName] = player;
+            }
+            return player;
+        }
+
+        function getOrCreatePlayer(idValue, nameValue) {
+            const id = String(idValue || '').trim();
+            const name = String(nameValue || '').trim();
+            const normalizedName = normalizePlayerName(name);
+
+            if (id && playersById[id]) {
+                return playersById[id];
+            }
+            if (normalizedName && playersByName[normalizedName]) {
+                const existingPlayer = playersByName[normalizedName];
+                if (id && !existingPlayer.id) {
+                    existingPlayer.id = id;
+                    existingPlayer.key = `id:${id}`;
+                    playersById[id] = existingPlayer;
+                    playersByKey[existingPlayer.key] = existingPlayer;
+                }
+                return existingPlayer;
+            }
+
+            return registerPlayer({
+                id: id || null,
+                key: id ? `id:${id}` : `name:${normalizedName}`,
+                name: name || 'Unknown Player',
+                plays: 0,
+                wins: 0
+            });
+        }
 
         if (playersResult.length > 0) {
             playersResult[0].values.forEach(row => {
-                playerMap[row[0]] = { name: row[1], plays: 0, wins: 0 };
+                getOrCreatePlayer(row[0], row[1]);
             });
         }
 
@@ -139,8 +185,8 @@ window.BGStatsData = (function createDataModule() {
                     }
 
                     scores.forEach(score => {
-                        const player = playerMap[score.playerRefId];
-                        if (!player) {
+                        const player = getOrCreatePlayer(score.playerRefId, score.playerName);
+                        if (!player || !player.name) {
                             return;
                         }
 
@@ -154,9 +200,12 @@ window.BGStatsData = (function createDataModule() {
             });
         }
 
-        return Object.values(playerMap)
+        return Object.values(playersByKey)
             .filter(player => player.plays > 0)
+            .sort((first, second) => first.name.localeCompare(second.name))
             .map(player => ({
+                id: player.id,
+                key: player.key,
                 name: player.name,
                 TotalPlays: player.plays,
                 Wins: player.wins,
