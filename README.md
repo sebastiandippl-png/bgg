@@ -14,6 +14,8 @@ A personal board-game statistics dashboard that uses BoardGameGeek (BGG) data on
 The application no longer supports BGStats JSON upload/import.
 All dashboard data comes from BGG sync endpoints.
 
+Thing metadata sync also stores `games.best_with` using `poll-summary` values (for example: `Best with 3 players, Recommended with 2–4 players`).
+
 ## Project Structure
 
 - `dist/bgstats-dashboard.html`: main dashboard UI

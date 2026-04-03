@@ -127,6 +127,16 @@ CREATE TABLE games (
 
 ### XML Parsing Gotchas
 
+### Thing Poll Summary Uses Non-Standard Result Names
+
+**Issue**: In `poll-summary` (`name="suggested_numplayers"`), BGG uses result names like `bestwith` and misspelled `recommmendedwith` (three "m"), so parsing by result `name` is brittle.
+
+**Solution**: Parse all `poll-summary/result` `value` attributes and concatenate them for `games.best_with`.
+
+**Example Stored Value**: `Best with 3 players, Recommended with 2–4 players`
+
+**Code Location**: `dist/api/bgg_sync_service.php` → `parse_best_with_summary()`
+
 **Thing Endpoint Response Structure**:
 ```xml
 <items>

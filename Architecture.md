@@ -119,6 +119,7 @@ Admin user clicks "Get Games" → "Get Metadata" → "Get Plays + Build DB" butt
 | avgRating | REAL | BGG average rating 1-10 |
 | minPlayers | INTEGER | Minimum players |
 | maxPlayers | INTEGER | Maximum players |
+| best_with | TEXT | Concatenated `poll-summary` values from thing metadata (e.g. `Best with 3 players, Recommended with 2–4 players`) |
 | minPlaytime | INTEGER | Min playtime (minutes) |
 | maxPlaytime | INTEGER | Max playtime (minutes) |
 | avgPlaytime | INTEGER | Average playtime (minutes) |

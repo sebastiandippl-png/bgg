@@ -303,6 +303,31 @@ function parse_bgg_int_value(SimpleXMLElement $item, string $fieldName): ?int {
     return ctype_digit($raw) ? (int)$raw : null;
 }
 
+function parse_best_with_summary(SimpleXMLElement $item): ?string {
+    $values = [];
+
+    foreach ($item->{'poll-summary'} as $pollSummary) {
+        $pollName = strtolower(trim((string)($pollSummary['name'] ?? '')));
+        if ($pollName !== 'suggested_numplayers') {
+            continue;
+        }
+
+        foreach ($pollSummary->result as $resultNode) {
+            $value = trim((string)($resultNode['value'] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+            $values[] = $value;
+        }
+    }
+
+    if ($values === []) {
+        return null;
+    }
+
+    return implode(', ', array_values(array_unique($values)));
+}
+
 /**
  * @param array<int, array<string, mixed>> $games
  * @param array<int, int> $gamesByBggId
@@ -319,6 +344,7 @@ function apply_bgg_thing_details_to_games(array &$games, array $gamesByBggId, Si
         $games[$gameIndex]['maxPlayerCount'] = parse_bgg_int_value($item, 'maxplayers');
         $games[$gameIndex]['minPlayTime'] = parse_bgg_int_value($item, 'minplaytime');
         $games[$gameIndex]['maxPlayTime'] = parse_bgg_int_value($item, 'maxplaytime');
+        $games[$gameIndex]['best_with'] = parse_best_with_summary($item);
 
         // Thing endpoint stats live under statistics/ratings.
         $ratingsNode = $item->statistics->ratings ?? null;
@@ -349,6 +375,7 @@ function apply_bgg_thing_details_to_games(array &$games, array $gamesByBggId, Si
             $raw['maxPlayerCount'] = $games[$gameIndex]['maxPlayerCount'];
             $raw['minPlayTime'] = $games[$gameIndex]['minPlayTime'];
             $raw['maxPlayTime'] = $games[$gameIndex]['maxPlayTime'];
+            $raw['best_with'] = $games[$gameIndex]['best_with'] ?? null;
             $raw['average_rating'] = $games[$gameIndex]['average_rating'] ?? null;
             $raw['bgg_rating'] = $games[$gameIndex]['bgg_rating'] ?? null;
             $raw['weight'] = $games[$gameIndex]['weight'] ?? null;
@@ -621,11 +648,11 @@ function fetch_plays_from_bgg(string $username, int $totalGames = 0): array {
 
 function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPlays): int {
     $stmt = $db->prepare('INSERT INTO games (
-        id, name, bggYear, minPlayerCount, maxPlayerCount, rating, average_rating, modificationDate,
+        id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, rating, average_rating, modificationDate,
         bggRating, bgg_rating, weight, isExpansion, isBaseGame, urlThumb, maxPlayTime, minPlayTime,
         bggId, owned, bgg_lastmodified, rawJson, syncedAt
     ) VALUES (
-        :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :rating, :averageRating, :modificationDate,
+        :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :bestWith, :rating, :averageRating, :modificationDate,
         :bggRating, :bggRatingSnake, :weight, :isExpansion, :isBaseGame, :urlThumb, :maxPlayTime, :minPlayTime,
         :bggId, :owned, :bggLastModified, :rawJson, :syncedAt
     )');
@@ -642,6 +669,8 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
         $stmt->bindValue(':bggYear', $game['bggYear'], $game['bggYear'] === null ? SQLITE3_NULL : SQLITE3_INTEGER);
         $stmt->bindValue(':minPlayerCount', (int)($game['minPlayerCount'] ?? 0), SQLITE3_INTEGER);
         $stmt->bindValue(':maxPlayerCount', (int)($game['maxPlayerCount'] ?? 0), SQLITE3_INTEGER);
+        $bestWith = $game['best_with'] ?? null;
+        $stmt->bindValue(':bestWith', $bestWith, $bestWith === null ? SQLITE3_NULL : SQLITE3_TEXT);
         $stmt->bindValue(':rating', $game['rating'], $game['rating'] === null ? SQLITE3_NULL : SQLITE3_FLOAT);
         $averageRating = $game['average_rating'] ?? $game['rating'] ?? null;
         $stmt->bindValue(':averageRating', $averageRating, $averageRating === null ? SQLITE3_NULL : SQLITE3_FLOAT);
@@ -855,6 +884,7 @@ function create_synced_bgg_database(array $games, array $plays, array $players):
             bggYear INTEGER,
             minPlayerCount INTEGER DEFAULT 0,
             maxPlayerCount INTEGER DEFAULT 0,
+            best_with TEXT,
             rating REAL,
             average_rating REAL,
             modificationDate TEXT,
