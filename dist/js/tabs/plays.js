@@ -31,12 +31,10 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, escapeHTML, isValid
         const safeThumbnailUrl = escapeHTML(thumbnailUrl);
         const safePlaceholderUrl = escapeHTML(placeholderSvg);
 
-        const bggUrl = game && game.bggId ? `https://boardgamegeek.com/boardgame/${game.bggId}/` : '#';
-        const linkTarget = game && game.bggId ? '_blank' : '';
-        const linkRel = game && game.bggId ? 'noopener noreferrer' : '';
+        const statsUrl = game && game.id ? `#gamestats/${encodeURIComponent(game.id)}` : '#';
 
         cardsHTML += `
-            <a href="${bggUrl}" target="${linkTarget}" rel="${linkRel}" class="block hover:no-underline">
+            <a href="${statsUrl}" class="block hover:no-underline">
                 <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 cursor-pointer h-full">
                     <div class="w-full h-32 bg-gray-700 flex items-center justify-center">
                         <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">

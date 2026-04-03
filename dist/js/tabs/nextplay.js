@@ -14,7 +14,7 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
         let html = '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3 p-3">';
 
         dataArray.forEach(row => {
-            const bggUrl = `https://boardgamegeek.com/boardgame/${row.bggId}/`;
+            const statsUrl = row.id ? `#gamestats/${encodeURIComponent(row.id)}` : '#';
             const minPlayers = row.minPlayers;
             const maxPlayers = row.maxPlayers;
             const playerCountDisplay = Number.isNaN(minPlayers) || Number.isNaN(maxPlayers)
@@ -34,7 +34,7 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
                             : '<span class="text-[10px] text-gray-500">No Image</span>'}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <a href="${bggUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition underline font-semibold text-sm break-words">
+                        <a href="${statsUrl}" class="text-blue-400 hover:text-blue-300 transition underline font-semibold text-sm break-words">
                             ${escapeHTML(row.name)}
                         </a>
                         <div class="mt-2 text-xs text-gray-300 space-y-1">

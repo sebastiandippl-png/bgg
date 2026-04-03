@@ -8,7 +8,7 @@ const BGG_SYNC_USERNAME = 'sebbes';
 const BGG_MAX_POLL_ATTEMPTS = 15;
 const BGG_PLAYS_PER_PAGE = 100;
 const BGG_THING_BATCH_SIZE = 20;
-const BGG_THING_REQUEST_INTERVAL_SECONDS = 2.5;
+const BGG_THING_REQUEST_INTERVAL_SECONDS = 5.0;
 
 function write_sync_progress(array $payload): void {
     write_bgg_sync_status($payload);
