@@ -497,6 +497,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         const allScores = [];
         const winningScores = [];
+        const scoreEntries = [];
         const playerStatsMap = {};
 
         gamePlays.forEach(play => {
@@ -519,6 +520,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
                     const numScore = parseFloat(score.score);
                     if (Number.isFinite(numScore)) {
                         allScores.push(numScore);
+                        scoreEntries.push({ name, score: numScore });
                         if (isWinner) {
                             winningScores.push(numScore);
                         }
@@ -531,6 +533,16 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const avgScore = hasScores ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null;
         const highScore = hasScores ? Math.max(...allScores) : null;
         const lowScore = hasScores ? Math.min(...allScores) : null;
+        const highScorePlayers = hasScores
+            ? [...new Set(scoreEntries
+                .filter(entry => entry.score === highScore)
+                .map(entry => entry.name))].sort((a, b) => a.localeCompare(b))
+            : [];
+        const lowScorePlayers = hasScores
+            ? [...new Set(scoreEntries
+                .filter(entry => entry.score === lowScore)
+                .map(entry => entry.name))].sort((a, b) => a.localeCompare(b))
+            : [];
         const avgWinningScore = winningScores.length > 0
             ? winningScores.reduce((a, b) => a + b, 0) / winningScores.length
             : null;
@@ -549,7 +561,9 @@ window.BGStatsSelectors = (function createSelectorModule() {
             firstPlayed,
             avgScore,
             highScore,
+            highScorePlayers,
             lowScore,
+            lowScorePlayers,
             avgWinningScore,
             players,
             recentPlays

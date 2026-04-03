@@ -18,8 +18,10 @@ window.BGStatsDashboard = (function createDashboardModule() {
         }
 
         const decoded = decodeURIComponent(hash);
-        if (TAB_IDS.has(decoded)) {
-            return decoded;
+        const slashIndex = decoded.indexOf('/');
+        const tabPart = slashIndex !== -1 ? decoded.slice(0, slashIndex) : decoded;
+        if (TAB_IDS.has(tabPart)) {
+            return tabPart;
         }
 
         const match = decoded.match(/^tab=(.+)$/i);
@@ -30,13 +32,24 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return null;
     }
 
+    function getHashSubParam() {
+        const hash = String(window.location.hash || '').replace(/^#/, '').trim();
+        if (!hash) { return null; }
+        const decoded = decodeURIComponent(hash);
+        const slashIndex = decoded.indexOf('/');
+        return slashIndex !== -1 ? decoded.slice(slashIndex + 1) : null;
+    }
+
     function updateHashForTab(tabId) {
-        const nextHash = `#${tabId}`;
+        let subParam = null;
+        if (tabId === 'gamestats' && window.BGStatsGameStats && window.BGStatsGameStats.selectedGameId) {
+            subParam = String(window.BGStatsGameStats.selectedGameId);
+        }
+        const nextHash = subParam ? `#${tabId}/${subParam}` : `#${tabId}`;
         if (window.location.hash === nextHash) {
             return;
         }
-
-        window.location.hash = tabId;
+        window.location.hash = subParam ? `${tabId}/${subParam}` : tabId;
     }
 
     function escapeHTML(value) {
@@ -494,7 +507,20 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
         window.addEventListener('hashchange', () => {
             const tabId = getTabIdFromHash();
-            if (!tabId || tabId === activeTabId) {
+            if (!tabId) {
+                return;
+            }
+
+            if (tabId === 'gamestats') {
+                const newGameId = getHashSubParam() || null;
+                if (window.BGStatsGameStats) {
+                    window.BGStatsGameStats.setSelectedGameId(newGameId);
+                }
+                switchTab(tabId, { skipHashUpdate: true });
+                return;
+            }
+
+            if (tabId === activeTabId) {
                 return;
             }
 
@@ -836,6 +862,12 @@ window.BGStatsDashboard = (function createDashboardModule() {
         const tabFromHash = getTabIdFromHash();
         if (tabFromHash) {
             activeTabId = tabFromHash;
+            if (tabFromHash === 'gamestats') {
+                const gameId = getHashSubParam();
+                if (gameId && window.BGStatsGameStats) {
+                    window.BGStatsGameStats.setSelectedGameId(gameId);
+                }
+            }
         }
         updateLastSyncedInfo();
         await initSqlEngine();

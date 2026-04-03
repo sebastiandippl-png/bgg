@@ -343,6 +343,30 @@ function parse_best_with_summary(SimpleXMLElement $item): array {
 }
 
 /**
+ * @return string|null
+ */
+function parse_designers(SimpleXMLElement $item): ?string {
+    $designers = [];
+
+    foreach ($item->link as $link) {
+        $type = strtolower(trim((string)($link['type'] ?? '')));
+        if ($type === 'boardgamedesigner') {
+            $value = trim((string)($link['value'] ?? ''));
+            if ($value !== '') {
+                $designers[] = $value;
+            }
+        }
+    }
+
+    $designerString = null;
+    if (!empty($designers)) {
+        $designerString = implode(', ', $designers);
+    }
+
+    return $designerString;
+}
+
+/**
  * @param array<int, array<string, mixed>> $games
  * @param array<int, int> $gamesByBggId
  */
@@ -361,6 +385,8 @@ function apply_bgg_thing_details_to_games(array &$games, array $gamesByBggId, Si
         $bestWithSummary = parse_best_with_summary($item);
         $games[$gameIndex]['best_with'] = $bestWithSummary['best_with'];
         $games[$gameIndex]['recommended_with'] = $bestWithSummary['recommended_with'];
+
+        $games[$gameIndex]['designer'] = parse_designers($item);
 
         // Thing endpoint stats live under statistics/ratings.
         $ratingsNode = $item->statistics->ratings ?? null;
@@ -393,6 +419,7 @@ function apply_bgg_thing_details_to_games(array &$games, array $gamesByBggId, Si
             $raw['maxPlayTime'] = $games[$gameIndex]['maxPlayTime'];
             $raw['best_with'] = $games[$gameIndex]['best_with'] ?? null;
             $raw['recommended_with'] = $games[$gameIndex]['recommended_with'] ?? null;
+            $raw['designer'] = $games[$gameIndex]['designer'] ?? null;
             $raw['average_rating'] = $games[$gameIndex]['average_rating'] ?? null;
             $raw['bgg_rating'] = $games[$gameIndex]['bgg_rating'] ?? null;
             $raw['weight'] = $games[$gameIndex]['weight'] ?? null;
@@ -842,11 +869,11 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
 
 function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPlays): int {
     $stmt = $db->prepare('INSERT INTO games (
-        id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, recommended_with, rating, average_rating, modificationDate,
+        id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, recommended_with, designer, rating, average_rating, modificationDate,
         bggRating, bgg_rating, weight, isExpansion, isBaseGame, urlThumb, maxPlayTime, minPlayTime,
         bggId, owned, bgg_lastmodified, rawJson, syncedAt
     ) VALUES (
-        :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :bestWith, :recommendedWith, :rating, :averageRating, :modificationDate,
+        :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :bestWith, :recommendedWith, :designer, :rating, :averageRating, :modificationDate,
         :bggRating, :bggRatingSnake, :weight, :isExpansion, :isBaseGame, :urlThumb, :maxPlayTime, :minPlayTime,
         :bggId, :owned, :bggLastModified, :rawJson, :syncedAt
     )');
@@ -867,6 +894,8 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
         $stmt->bindValue(':bestWith', $bestWith, $bestWith === null ? SQLITE3_NULL : SQLITE3_TEXT);
         $recommendedWith = $game['recommended_with'] ?? null;
         $stmt->bindValue(':recommendedWith', $recommendedWith, $recommendedWith === null ? SQLITE3_NULL : SQLITE3_TEXT);
+        $designer = $game['designer'] ?? null;
+        $stmt->bindValue(':designer', $designer, $designer === null ? SQLITE3_NULL : SQLITE3_TEXT);
         $stmt->bindValue(':rating', $game['rating'], $game['rating'] === null ? SQLITE3_NULL : SQLITE3_FLOAT);
         $averageRating = $game['average_rating'] ?? $game['rating'] ?? null;
         $stmt->bindValue(':averageRating', $averageRating, $averageRating === null ? SQLITE3_NULL : SQLITE3_FLOAT);
@@ -1082,6 +1111,7 @@ function create_synced_bgg_database(array $games, array $plays, array $players):
             maxPlayerCount INTEGER DEFAULT 0,
             best_with TEXT,
             recommended_with TEXT,
+            designer TEXT,
             rating REAL,
             average_rating REAL,
             modificationDate TEXT,

@@ -74,6 +74,7 @@ window.BGStatsGameStats = (function createGameStatsModule() {
     return {
         get selectedGameId() { return _selectedGameId; },
         setAllGames: function (games) { _allGames = Array.isArray(games) ? games : []; },
+        setSelectedGameId: function (id) { _selectedGameId = (id !== null && id !== undefined) ? id : null; },
         selectMatch: selectMatch,
         clearGame: clearGame,
         handleSearchInput: handleSearchInput
@@ -136,10 +137,22 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         var firstPlayed = data.firstPlayed;
         var avgScore = data.avgScore;
         var highScore = data.highScore;
+        var highScorePlayers = Array.isArray(data.highScorePlayers) ? data.highScorePlayers : [];
         var lowScore = data.lowScore;
+        var lowScorePlayers = Array.isArray(data.lowScorePlayers) ? data.lowScorePlayers : [];
         var avgWinningScore = data.avgWinningScore;
         var players = data.players;
         var recentPlays = data.recentPlays;
+
+        var highestWithNames = fmtNum(highScore, 0);
+        if (highScorePlayers.length > 0) {
+            highestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + escapeHTML(highScorePlayers.join(', ')) + '</span>';
+        }
+
+        var lowestWithNames = fmtNum(lowScore, 0);
+        if (lowScorePlayers.length > 0) {
+            lowestWithNames += '<span class="block text-xs text-gray-500 mt-0.5">' + escapeHTML(lowScorePlayers.join(', ')) + '</span>';
+        }
 
         var placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
         var thumbnailUrl = placeholderSvg;
@@ -176,6 +189,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         var playTimeRange = (game.minPlayTime || '?') + (game.maxPlayTime && game.maxPlayTime !== game.minPlayTime ? '\u2013' + game.maxPlayTime : '') + ' min';
         gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Play Time</dt><dd class="text-gray-200 text-right">' + escapeHTML(playTimeRange) + '</dd></div>';
         if (game.weight) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Weight</dt><dd class="text-gray-200 text-right">' + fmt(game.weight) + '</dd></div>'; }
+        if (game.designer) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Designer</dt><dd class="text-gray-200 text-right text-sm">' + fmt(game.designer) + '</dd></div>'; }
         if (game.rating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Your Rating</dt><dd class="text-amber-300 text-right font-medium">' + fmt(game.rating) + '</dd></div>'; }
         if (game.bggRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">BGG Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.bggRating) + '</dd></div>'; }
 
@@ -201,8 +215,8 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                 + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Scores</h3>'
                 + '<dl class="grid grid-cols-2 gap-3 text-sm">'
                 + '<div><dt class="text-xs text-gray-500">Average</dt><dd class="text-gray-200 font-medium mt-0.5">' + fmtNum(avgScore) + '</dd></div>'
-                + '<div><dt class="text-xs text-gray-500">Highest</dt><dd class="text-green-400 font-medium mt-0.5">' + fmtNum(highScore, 0) + '</dd></div>'
-                + '<div><dt class="text-xs text-gray-500">Lowest</dt><dd class="text-rose-400 font-medium mt-0.5">' + fmtNum(lowScore, 0) + '</dd></div>'
+                + '<div><dt class="text-xs text-gray-500">Highest</dt><dd class="text-green-400 font-medium mt-0.5">' + highestWithNames + '</dd></div>'
+                + '<div><dt class="text-xs text-gray-500">Lowest</dt><dd class="text-rose-400 font-medium mt-0.5">' + lowestWithNames + '</dd></div>'
                 + '<div><dt class="text-xs text-gray-500">Avg Winning</dt><dd class="text-amber-400 font-medium mt-0.5">' + fmtNum(avgWinningScore) + '</dd></div>'
                 + '</dl>'
                 + '</div>';
@@ -267,6 +281,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
 
         // Arrange in responsive grid - 2 columns on md+
         // Order: gameInfo | playHistory / scores | players / recentPlays (full width)
+
         return '<div>'
             + '<div class="flex items-center gap-3 mb-5">'
             + '<button onclick="window.BGStatsGameStats.clearGame()" class="text-sm text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition">'
