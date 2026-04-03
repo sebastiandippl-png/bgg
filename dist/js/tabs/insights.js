@@ -41,8 +41,8 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML
         </div>`
         : `
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
-            <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Last Modified</h3>
-            <p class="text-sm text-gray-500">No modified games found.</p>
+            <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Last Added</h3>
+            <p class="text-sm text-gray-500">No added games found.</p>
         </div>`;
 
     const anneWinsHighlight = anneVsSeb && anneVsSeb.leader === 'anne'
