@@ -168,6 +168,18 @@ CREATE TABLE games (
 
 ## Known Issues & Solutions
 
+### Issue: Need Fast Recent Plays Sync Without Rebuilding DB
+
+**Requirement**: Fetch only recent plays and avoid destructive database rebuild.
+
+**Approach**:
+- Request BGG plays with `mindate` set to last 7 days.
+- Upsert with `INSERT OR IGNORE` into `plays`, `players`, and `play_players`.
+
+**Why it works**: Play row IDs are deterministic (`bgg_play_<playId>_<quantityIndex>`), so duplicates are naturally ignored while new records are appended.
+
+**Code Location**: `dist/api/sync_bgg_last_plays.php` + `dist/api/bgg_sync_service.php` (`append_recent_plays_to_existing_database()`)
+
 ### Issue: Frontend JS Changes Not Visible After Deploy
 
 **Symptoms**: Updated files like `dist/js/tabs/plays.js` appear unchanged on server after running deploy.

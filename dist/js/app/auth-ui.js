@@ -14,6 +14,7 @@
         'admin-sync-games-btn',
         'admin-sync-metadata-btn',
         'admin-sync-plays-btn',
+        'admin-sync-last-plays-btn',
         'tab-schema',
         'admin-logout-btn'
     ];

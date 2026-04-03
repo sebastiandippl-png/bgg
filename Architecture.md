@@ -28,12 +28,18 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 1. `sync_bgg_games.php` — Fetch full collection only (~30s)
 2. `sync_bgg_metadata.php` — Enrich games with details (~2-3 min, batched)
 3. `sync_bgg_plays.php` — Fetch all plays + build final DB (~5-10 min, paginated)
+4. `sync_bgg_last_plays.php` — Fetch only last-week plays and append only missing rows (no DB rebuild)
 
 **Each stage:**
 - Writes intermediate SQLite snapshot
 - Emits granular progress updates
 - Can be run independently (though usually sequential)
 - Acts as a checkpoint for debugging
+
+**Incremental stage behavior (`sync_bgg_last_plays.php`):**
+- Requests BGG plays with `mindate=<today-7d>`
+- Uses `INSERT OR IGNORE` on `plays`, `players`, and `play_players`
+- Keeps existing `bgg.db` and all existing rows intact (no delete/recreate)
 
 ### Database Publishing Pattern
 
@@ -91,6 +97,8 @@ set_time_limit(0); // No timeout
 ### Trigger a Full Sync from Dashboard
 
 Admin user clicks "Get Games" → "Get Metadata" → "Get Plays + Build DB" buttons sequentially.
+
+For quick updates between full syncs, admin can click `Get Last Plays.` to append only new plays from the last week.
 
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html
@@ -183,6 +191,7 @@ dist/
   │   ├── sync_bgg_games.php
   │   ├── sync_bgg_metadata.php
   │   ├── sync_bgg_plays.php
+  │   ├── sync_bgg_last_plays.php
   │   └── sync_bgg_status.php
   ├── js/app/                   # Frontend modules
   │   ├── dashboard.js

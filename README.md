@@ -16,6 +16,8 @@ All dashboard data comes from BGG sync endpoints.
 
 Thing metadata sync also stores `games.best_with` using `poll-summary` values (for example: `Best with 3 players, Recommended with 2–4 players`).
 
+The header also includes `Get Last Plays.` for incremental sync: it fetches only last-week plays and inserts only new play rows into existing tables without rebuilding `bgg.db`.
+
 ## Project Structure
 
 - `dist/bgstats-dashboard.html`: main dashboard UI
@@ -23,6 +25,7 @@ Thing metadata sync also stores `games.best_with` using `poll-summary` values (f
 - `dist/api/sync_bgg.php`: admin-only sync trigger
 - `dist/api/sync_bgg_status.php`: sync progress endpoint
 - `dist/api/bgg_sync_service.php`: fetch + transform + SQLite rebuild
+- `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)
 - `dist/api/get_db.php`: serves active `bgg.db`
 - `dist/bgg.db`: active SQLite database used by the dashboard
 - `dist/db_storage/`: backups, sync status, and cache files

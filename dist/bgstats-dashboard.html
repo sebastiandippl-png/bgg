@@ -6,7 +6,7 @@
     <title>SebundAnnes Boardgame Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20260402">
+    <link rel="stylesheet" href="styles.css?v=20260403">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans min-h-screen p-3 sm:p-4 md:p-6">
@@ -27,6 +27,9 @@
                 </button>
                 <button id="admin-sync-plays-btn" class="hidden px-3 sm:px-4 py-2 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-md transition text-center active:scale-95">
                     Get Plays + Build DB
+                </button>
+                <button id="admin-sync-last-plays-btn" class="hidden px-3 sm:px-4 py-2 sm:py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs sm:text-sm font-semibold rounded-md transition text-center active:scale-95">
+                    Get Last Plays.
                 </button>
                 <div id="google-login-shell" class="flex justify-center md:justify-stretch rounded-lg border border-gray-700/80 bg-gray-900/40 px-3 py-2">
                     <div id="google-login-area" class="google-login-area"></div>
@@ -86,19 +89,19 @@
     </div>
 
     
-    <script src="js/utils/security.js?v=20260402" defer></script>
-    <script src="js/utils/sort.js?v=20260402" defer></script>
-    <script src="js/utils/media.js?v=20260402" defer></script>
-    <script src="js/app/state.js?v=20260402" defer></script>
-    <script src="js/app/data.js?v=20260402" defer></script>
-    <script src="js/app/selectors.js?v=20260402" defer></script>
-    <script src="js/tabs/insights.js?v=20260402" defer></script>
-    <script src="js/tabs/plays.js?v=20260402" defer></script>
-    <script src="js/tabs/nextplay.js?v=20260402" defer></script>
-    <script src="js/tabs/schema.js?v=20260402" defer></script>
-    <script src="js/app/dashboard.js?v=20260402" defer></script>
-    <script src="script.js?v=20260402" defer></script>
-    <script src="js/app/auth-ui.js?v=20260402" defer></script>
+    <script src="js/utils/security.js?v=20260403" defer></script>
+    <script src="js/utils/sort.js?v=20260403" defer></script>
+    <script src="js/utils/media.js?v=20260403" defer></script>
+    <script src="js/app/state.js?v=20260403" defer></script>
+    <script src="js/app/data.js?v=20260403" defer></script>
+    <script src="js/app/selectors.js?v=20260403" defer></script>
+    <script src="js/tabs/insights.js?v=20260403" defer></script>
+    <script src="js/tabs/plays.js?v=20260403" defer></script>
+    <script src="js/tabs/nextplay.js?v=20260403" defer></script>
+    <script src="js/tabs/schema.js?v=20260403" defer></script>
+    <script src="js/app/dashboard.js?v=20260403" defer></script>
+    <script src="script.js?v=20260403" defer></script>
+    <script src="js/app/auth-ui.js?v=20260403" defer></script>
 
     <style>
         * { -webkit-user-select: none; user-select: none; }

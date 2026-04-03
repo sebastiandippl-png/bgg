@@ -7,6 +7,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_GAMES_URL = 'api/sync_bgg_games.php';
     const SYNC_BGG_METADATA_URL = 'api/sync_bgg_metadata.php';
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
+    const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
 
     function escapeHTML(value) {
@@ -135,6 +136,9 @@ window.BGStatsDashboard = (function createDashboardModule() {
             percent = totalGames > 0 ? 72 + ((currentGames / totalGames) * 12) : 78;
         } else if (status.state === 'imported' && phase === 'import_plays') {
             label = 'Importing Plays';
+            percent = totalPlays > 0 ? 84 + ((currentPlays / totalPlays) * 15) : 90;
+        } else if (status.state === 'imported' && phase === 'import_recent_plays') {
+            label = 'Importing Last Plays';
             percent = totalPlays > 0 ? 84 + ((currentPlays / totalPlays) * 15) : 90;
         } else if (status.state === 'complete') {
             label = 'Complete';
@@ -455,6 +459,14 @@ window.BGStatsDashboard = (function createDashboardModule() {
             });
         }
 
+        const syncLastPlaysButton = document.getElementById('admin-sync-last-plays-btn');
+        if (syncLastPlaysButton) {
+            syncLastPlaysButton.addEventListener('click', event => {
+                event.preventDefault();
+                syncBggLastPlays();
+            });
+        }
+
         document.addEventListener('error', handleImageError, true);
     }
 
@@ -713,6 +725,16 @@ window.BGStatsDashboard = (function createDashboardModule() {
             reloadDbOnSuccess: true,
             busyLabel: 'Getting Plays...',
             startMessage: 'Starting plays sync...'
+        });
+    }
+
+    async function syncBggLastPlays() {
+        await runSyncAction({
+            buttonId: 'admin-sync-last-plays-btn',
+            syncUrl: SYNC_BGG_LAST_PLAYS_URL,
+            reloadDbOnSuccess: true,
+            busyLabel: 'Getting Last Plays...',
+            startMessage: 'Starting last-week plays sync...'
         });
     }
 

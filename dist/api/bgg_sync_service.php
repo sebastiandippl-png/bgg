@@ -483,9 +483,13 @@ function hydrate_games_with_bgg_details(array $games): array {
 /**
  * @return array{plays: array<int, array<string, mixed>>, players: array<int, array<string, mixed>>}
  */
-function fetch_plays_from_bgg(string $username, int $totalGames = 0): array {
+function fetch_plays_from_bgg(string $username, int $totalGames = 0, ?string $minDate = null): array {
     ensure_bgg_sync_dependencies();
     $username = sanitize_bgg_username($username);
+
+    if ($minDate !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $minDate)) {
+        throw new RuntimeException('invalid_min_date');
+    }
 
     $plays = [];
     $playersById = [];
@@ -494,12 +498,17 @@ function fetch_plays_from_bgg(string $username, int $totalGames = 0): array {
     $originalPlayCount = 0;
 
     do {
+        $requestParams = [
+            'username' => $username,
+            'page' => (string)$page,
+        ];
+        if ($minDate !== null) {
+            $requestParams['mindate'] = $minDate;
+        }
+
         $xml = request_bgg_xml_with_polling(
             'plays',
-            [
-                'username' => $username,
-                'page' => (string)$page,
-            ],
+            $requestParams,
             'Waiting for BGG plays export...',
             'bgg_plays_timeout',
             [
@@ -643,6 +652,174 @@ function fetch_plays_from_bgg(string $username, int $totalGames = 0): array {
     return [
         'plays' => $plays,
         'players' => array_values($playersById),
+    ];
+}
+
+/**
+ * @return array{insertedPlays:int, fetchedPlays:int, insertedPlayers:int, insertedPlayPlayers:int}
+ */
+function append_recent_plays_to_existing_database(array $plays, array $players): array {
+    ensure_bgg_sync_dependencies();
+
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        throw new RuntimeException('active_db_missing');
+    }
+
+    $db = new SQLite3($activeDbPath);
+    $db->busyTimeout(3000);
+    $db->exec('PRAGMA journal_mode=WAL;');
+    $db->exec('PRAGMA synchronous=NORMAL;');
+
+    $insertedPlays = 0;
+    $insertedPlayers = 0;
+    $insertedPlayPlayers = 0;
+
+    try {
+        $db->exec('BEGIN TRANSACTION');
+
+        // Keep incremental sync resilient even on old databases.
+        $db->exec('CREATE TABLE IF NOT EXISTS players (
+            id TEXT PRIMARY KEY,
+            name TEXT
+        )');
+        $db->exec('CREATE TABLE IF NOT EXISTS play_players (
+            id TEXT PRIMARY KEY,
+            playId TEXT NOT NULL,
+            playerRefId TEXT,
+            playerName TEXT NOT NULL,
+            score REAL,
+            winner INTEGER DEFAULT 0
+        )');
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_play_players_playId ON play_players (playId)');
+        $db->exec('CREATE INDEX IF NOT EXISTS idx_play_players_playerRefId ON play_players (playerRefId)');
+
+        $playsStmt = $db->prepare('INSERT OR IGNORE INTO plays (
+            id, playDate, durationMin, gameRefId, quantity, location, comments, playerScores, rawJson
+        ) VALUES (
+            :id, :playDate, :durationMin, :gameRefId, :quantity, :location, :comments, :playerScores, :rawJson
+        )');
+        if (!$playsStmt) {
+            throw new RuntimeException('plays_upsert_prepare_failed');
+        }
+
+        $totalPlays = count($plays);
+        foreach ($plays as $index => $play) {
+            $playsStmt->bindValue(':id', (string)$play['id'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':playDate', (string)$play['playDate'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':durationMin', (int)$play['durationMin'], SQLITE3_INTEGER);
+            $playsStmt->bindValue(':gameRefId', (string)$play['gameRefId'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':quantity', (int)$play['quantity'], SQLITE3_INTEGER);
+            $playsStmt->bindValue(':location', (string)$play['location'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':comments', (string)$play['comments'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':playerScores', (string)$play['playerScores'], SQLITE3_TEXT);
+            $playsStmt->bindValue(':rawJson', (string)$play['rawJson'], SQLITE3_TEXT);
+
+            if ($playsStmt->execute() === false) {
+                throw new RuntimeException('plays_upsert_execute_failed');
+            }
+
+            if ($db->changes() > 0) {
+                $insertedPlays += 1;
+            }
+
+            if (($index + 1) % 25 === 0 || ($index + 1) === $totalPlays) {
+                write_sync_progress([
+                    'state' => 'imported',
+                    'phase' => 'import_recent_plays',
+                    'message' => 'Upserting last-week plays into existing bgg.db...',
+                    'currentGames' => 0,
+                    'totalGames' => 0,
+                    'currentPlays' => $index + 1,
+                    'totalPlays' => $totalPlays,
+                    'insertedPlays' => $insertedPlays,
+                ]);
+            }
+        }
+
+        $playersStmt = $db->prepare('INSERT OR IGNORE INTO players (id, name) VALUES (:id, :name)');
+        if (!$playersStmt) {
+            throw new RuntimeException('players_upsert_prepare_failed');
+        }
+
+        foreach ($players as $player) {
+            $playersStmt->bindValue(':id', (string)$player['id'], SQLITE3_TEXT);
+            $playersStmt->bindValue(':name', (string)$player['name'], SQLITE3_TEXT);
+            if ($playersStmt->execute() === false) {
+                throw new RuntimeException('players_upsert_execute_failed');
+            }
+            if ($db->changes() > 0) {
+                $insertedPlayers += 1;
+            }
+        }
+
+        $playPlayersStmt = $db->prepare('INSERT OR IGNORE INTO play_players (
+            id, playId, playerRefId, playerName, score, winner
+        ) VALUES (
+            :id, :playId, :playerRefId, :playerName, :score, :winner
+        )');
+        if (!$playPlayersStmt) {
+            throw new RuntimeException('play_players_upsert_prepare_failed');
+        }
+
+        foreach ($plays as $play) {
+            $playId = (string)($play['id'] ?? '');
+            if ($playId === '') {
+                continue;
+            }
+
+            $scoresRaw = (string)($play['playerScores'] ?? '');
+            if ($scoresRaw === '') {
+                continue;
+            }
+
+            $scores = json_decode($scoresRaw, true);
+            if (!is_array($scores)) {
+                continue;
+            }
+
+            foreach ($scores as $index => $scoreEntry) {
+                if (!is_array($scoreEntry)) {
+                    continue;
+                }
+
+                $playerRefId = trim((string)($scoreEntry['playerRefId'] ?? ''));
+                $playerName = trim((string)($scoreEntry['playerName'] ?? 'Unknown Player'));
+                $scoreValueRaw = $scoreEntry['score'] ?? null;
+                $scoreValue = is_numeric($scoreValueRaw) ? (float)$scoreValueRaw : null;
+                $winner = (($scoreEntry['winner'] ?? false) === true || (string)($scoreEntry['winner'] ?? '0') === '1') ? 1 : 0;
+                $rowId = $playId . '_idx_' . (string)$index;
+
+                $playPlayersStmt->bindValue(':id', $rowId, SQLITE3_TEXT);
+                $playPlayersStmt->bindValue(':playId', $playId, SQLITE3_TEXT);
+                $playPlayersStmt->bindValue(':playerRefId', $playerRefId !== '' ? $playerRefId : null, $playerRefId !== '' ? SQLITE3_TEXT : SQLITE3_NULL);
+                $playPlayersStmt->bindValue(':playerName', $playerName, SQLITE3_TEXT);
+                $playPlayersStmt->bindValue(':score', $scoreValue, $scoreValue === null ? SQLITE3_NULL : SQLITE3_FLOAT);
+                $playPlayersStmt->bindValue(':winner', $winner, SQLITE3_INTEGER);
+
+                if ($playPlayersStmt->execute() === false) {
+                    throw new RuntimeException('play_players_upsert_execute_failed');
+                }
+                if ($db->changes() > 0) {
+                    $insertedPlayPlayers += 1;
+                }
+            }
+        }
+
+        $db->exec('COMMIT');
+    } catch (Throwable $exception) {
+        $db->exec('ROLLBACK');
+        $db->close();
+        throw $exception;
+    }
+
+    $db->close();
+
+    return [
+        'insertedPlays' => $insertedPlays,
+        'fetchedPlays' => count($plays),
+        'insertedPlayers' => $insertedPlayers,
+        'insertedPlayPlayers' => $insertedPlayPlayers,
     ];
 }
 
