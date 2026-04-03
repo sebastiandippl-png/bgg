@@ -23,6 +23,7 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
             const lastPlayedDisplay = (row.lastPlayed === null || row.lastPlayed === '') ? 'Never played' : row.lastPlayed;
             const weightDisplay = row.weight ? row.weight : '-';
             const bestWithDisplay = row.bestWith && String(row.bestWith).trim() !== '' ? row.bestWith : '-';
+            const recommendedWithDisplay = row.recommendedWith && String(row.recommendedWith).trim() !== '' ? row.recommendedWith : '-';
             const thumb = row.urlThumb ? String(row.urlThumb) : '';
 
             html += `<article class="rounded-lg border border-gray-700 bg-gray-800/60 p-3">
@@ -52,6 +53,10 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
                             <div class="flex justify-between gap-3">
                                 <span class="text-gray-500">Best with</span>
                                 <span class="text-right">${escapeHTML(bestWithDisplay)}</span>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <span class="text-gray-500">Recommended with</span>
+                                <span class="text-right">${escapeHTML(recommendedWithDisplay)}</span>
                             </div>
                         </div>
                     </div>
