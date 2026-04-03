@@ -8,4 +8,6 @@ return [
     'BGSTATS_BGG_API_KEY' => '',
     'BGSTATS_GOOGLE_CLIENT_ID' => '',
     'BGSTATS_ADMIN_EMAIL' => '',
+    // Optional: comma-separated list, e.g. 'https://dashboard.example.com,https://www.example.com'
+    'BGSTATS_ALLOWED_ORIGINS' => '',
 ];
