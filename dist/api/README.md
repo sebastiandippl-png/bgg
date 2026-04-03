@@ -37,8 +37,10 @@ Typical states:
 
 ## Environment Variables
 
+- `BGSTATS_BGG_USERNAME`: BGG username whose collection and plays are synced.
 - `BGSTATS_BGG_API_KEY`: Token used for BGG requests.
 - `BGSTATS_GOOGLE_CLIENT_ID`: Google OAuth client ID for admin login.
+- `BGSTATS_ADMIN_EMAIL`: Email address of the admin user.
 
 ## Local Config Fallback (No Env Vars)
 
@@ -53,6 +55,7 @@ Use this format:
 declare(strict_types=1);
 
 return [
+  'BGSTATS_BGG_USERNAME' => 'your-bgg-username',
   'BGSTATS_BGG_API_KEY' => 'your-real-key-here',
   'BGSTATS_GOOGLE_CLIENT_ID' => 'your-google-oauth-client-id',
   'BGSTATS_ADMIN_EMAIL' => 'admin@example.com',

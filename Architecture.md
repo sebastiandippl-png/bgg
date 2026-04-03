@@ -135,42 +135,67 @@ For quick updates between full syncs, admin can click `Get Last Plays.` to appen
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT PRIMARY | Internal ID (usually `bggId` or `bgg_<bggId>`) |
+| id | TEXT PRIMARY | Internal ID (`bgg_<bggId>`) |
 | bggId | INTEGER | BGG numeric ID |
 | owned | INTEGER | 0 = wishlist/trade, 1 = in collection |
 | name | TEXT | Game title |
 | isExpansion | INTEGER | 1 if expansion, 0 if base game |
 | isBaseGame | INTEGER | 1 if base game, 0 if expansion |
-| yearPublished | INTEGER | Year game first published |
-| avgRating | REAL | BGG average rating 1-10 |
-| minPlayers | INTEGER | Minimum players |
-| maxPlayers | INTEGER | Maximum players |
-| best_with | TEXT | Concatenated `poll-summary` values from thing metadata (e.g. `Best with 3 players, Recommended with 2–4 players`) |
-| minPlaytime | INTEGER | Min playtime (minutes) |
-| maxPlaytime | INTEGER | Max playtime (minutes) |
-| avgPlaytime | INTEGER | Average playtime (minutes) |
+| bggYear | INTEGER | Year game first published |
+| rating | REAL | User's personal BGG rating |
+| average_rating | REAL | BGG community average rating 1–10 |
+| bgg_rating | REAL | BGG Bayesian average (GeekRating) |
+| weight | REAL | BGG community complexity weight |
+| best_with | TEXT | Best player count from `poll-summary` (e.g. `3`) |
+| recommended_with | TEXT | Recommended player count range from `poll-summary` (e.g. `2-4`) |
+| designer | TEXT | Comma-separated designer names |
+| minPlayerCount | INTEGER | Minimum players |
+| maxPlayerCount | INTEGER | Maximum players |
+| minPlayTime | INTEGER | Min playtime (minutes) |
+| maxPlayTime | INTEGER | Max playtime (minutes) |
+| urlThumb | TEXT | Thumbnail image URL |
+| bgg_lastmodified | TEXT | Date item was last modified in user's BGG collection |
+| syncedAt | TEXT | ISO timestamp of last sync |
+| rawJson | TEXT | Full raw payload from BGG collection/thing API |
 
 ### plays table
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | INTEGER PRIMARY | Auto-increment |
-| gameRefId | TEXT | Foreign key → games.id (may be NULL if unmatched) |
+| id | TEXT PRIMARY | Deterministic ID (`bgg_play_<playId>_<qty>`) |
+| gameRefId | TEXT | Foreign key → games.id |
 | playDate | TEXT | ISO date (YYYY-MM-DD) |
 | durationMin | INTEGER | Playtime in minutes |
-| playerScores | TEXT | JSON array `[{name, score, placement}, ...]` |
-| rawJson | TEXT | Full play record from BGG (fallback for unmatched games) |
+| quantity | INTEGER | Number of plays for this record (usually 1) |
+| location | TEXT | Location string from BGG |
+| comments | TEXT | Play comments from BGG |
+| playerScores | TEXT | JSON array `[{playerRefId, playerName, score, winner, new, rating}, ...]` |
+| rawJson | TEXT | Full raw play record from BGG |
 
 ### players table
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT PRIMARY | Player name (deduplicated) |
+| id | TEXT PRIMARY | Stable player ref ID (`bgg_player_<userId>` or hash-based) |
 | name | TEXT | Display name |
+
+### play_players table
+
+Normalized per-player rows extracted from each play. Enables efficient player-centric queries without JSON parsing.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PRIMARY | `<playId>_idx_<index>` — deterministic, unique per play row |
+| playId | TEXT | Foreign key → plays.id |
+| playerRefId | TEXT | Foreign key → players.id (nullable) |
+| playerName | TEXT | Player display name (denormalized for query convenience) |
+| score | REAL | Numeric score (nullable) |
+| winner | INTEGER | 1 if winner, 0 otherwise |
 
 **Relationships**:
 - `plays.gameRefId` → `games.id` (LEFT JOIN for unmatched plays)
-- `plays.playerScores` → array of player names → `players.id`
+- `play_players.playId` → `plays.id`
+- `play_players.playerRefId` → `players.id`
 
 ---
 
@@ -200,7 +225,7 @@ Metadata enrichment is slowest because:
 
 ```
 dist/
-  ├── bgg-dashboard.html       # Main app (entry point)
+  ├── bgstats-dashboard.html  # Main app (entry point)
   ├── bgg.db                   # Active SQLite database
   ├── api/                      # Backend endpoints
   │   ├── auth.php

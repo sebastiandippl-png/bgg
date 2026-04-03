@@ -35,7 +35,7 @@ write_bgg_sync_status([
     'state' => 'queued',
     'phase' => 'queued',
     'message' => 'Last-week plays sync queued.',
-    'username' => BGG_SYNC_USERNAME,
+    'username' => get_bgg_sync_username(),
     'currentGames' => 0,
     'totalGames' => 0,
     'currentPlays' => 0,
@@ -43,10 +43,10 @@ write_bgg_sync_status([
 ]);
 
 try {
-    $playsPayload = fetch_plays_from_bgg(BGG_SYNC_USERNAME, 0, $minDate);
+    $playsPayload = fetch_plays_from_bgg(get_bgg_sync_username(), 0, $minDate);
 
     write_bgg_sync_cache('plays_last_week', [
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'fetchedAt' => gmdate('c'),
         'minDate' => $minDate,
         'plays' => $playsPayload['plays'],
@@ -59,7 +59,7 @@ try {
         'state' => 'complete',
         'phase' => 'complete',
         'message' => 'Last-week plays sync completed.',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'insertedGames' => 0,
         'insertedPlays' => $result['insertedPlays'],
         'fetchedPlays' => $result['fetchedPlays'],
@@ -72,7 +72,7 @@ try {
     echo json_encode([
         'success' => true,
         'step' => 'last_week_plays',
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
         'lookbackDays' => $lookbackDays,
         'minDate' => $minDate,
         'insertedGames' => 0,
@@ -91,7 +91,7 @@ try {
         'state' => 'error',
         'phase' => 'error',
         'message' => $code,
-        'username' => BGG_SYNC_USERNAME,
+        'username' => get_bgg_sync_username(),
     ]);
 
     http_response_code(500);

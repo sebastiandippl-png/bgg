@@ -16,7 +16,7 @@ This is just a toy project to learn different things for me. Hence there are ton
 1. Open `dist/bgstats-dashboard.html` in a browser.
 2. Sign in as admin to unlock sync controls in the header.
 3. Run `Get Games`, then `Get Game Metadata`, then `Get Plays + Build DB`.
-4. The backend fetches data for user `sebbes` and publishes a rebuilt `dist/bgg.db`.
+4. The backend fetches data for the BGG user configured via `BGSTATS_BGG_USERNAME` (env var or `local_config.php`) and publishes a rebuilt `dist/bgg.db`.
 
 ## Data Source
 
@@ -38,7 +38,9 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 
 - `dist/bgstats-dashboard.html`: main dashboard UI
 - `dist/js/`: frontend app modules and tab renderers
-- `dist/api/sync_bgg.php`: admin-only sync trigger
+- `dist/api/sync_bgg_games.php`: stage 1 — fetch collection from BGG
+- `dist/api/sync_bgg_metadata.php`: stage 2 — enrich games with thing metadata
+- `dist/api/sync_bgg_plays.php`: stage 3 — fetch all plays and rebuild `bgg.db`
 - `dist/api/sync_bgg_status.php`: sync progress endpoint
 - `dist/api/bgg_sync_service.php`: fetch + transform + SQLite rebuild
 - `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)
@@ -50,7 +52,7 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 
 - Requires PHP with SQLite3 extension.
 - Requires outbound access to BGG XML API.
-- Keep `BGSTATS_BGG_API_KEY` server-side.
+- Keep `BGSTATS_BGG_USERNAME`, `BGSTATS_BGG_API_KEY`, `BGSTATS_GOOGLE_CLIENT_ID`, and `BGSTATS_ADMIN_EMAIL` server-side (env vars or `dist/api/local_config.php`).
 - Deploy with `./ionos_deploy.sh` from the project root (or any directory). The script now resolves `dist/` relative to the script location.
 - The deploy uses checksum comparison and itemized rsync output, so changed assets like `dist/js/tabs/plays.js` are reliably uploaded and visible in deploy logs.
 - Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260402` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.
