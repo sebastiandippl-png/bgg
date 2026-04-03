@@ -478,12 +478,91 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function getGameStatsViewModel(state, gameId) {
+        if (gameId === null || gameId === undefined) {
+            return null;
+        }
+
+        const game = state.games.find(g => String(g.id) === String(gameId));
+        if (!game) {
+            return null;
+        }
+
+        const gamePlays = state.plays.filter(play => String(play.gameId) === String(gameId));
+        const playCount = gamePlays.length;
+
+        const playDates = gamePlays.map(p => p.Date).filter(Boolean).sort();
+        const lastPlayed = playDates[playDates.length - 1] || null;
+        const firstPlayed = playDates[0] || null;
+
+        const allScores = [];
+        const winningScores = [];
+        const playerStatsMap = {};
+
+        gamePlays.forEach(play => {
+            const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
+            scores.forEach(score => {
+                const name = String(score.playerName || '').trim();
+                if (!name) { return; }
+
+                if (!playerStatsMap[name]) {
+                    playerStatsMap[name] = { name, plays: 0, wins: 0 };
+                }
+                playerStatsMap[name].plays += 1;
+
+                const isWinner = score.winner === true || score.winner === 1 || score.winner === '1';
+                if (isWinner) {
+                    playerStatsMap[name].wins += 1;
+                }
+
+                if (score.score !== null && score.score !== undefined && score.score !== '') {
+                    const numScore = parseFloat(score.score);
+                    if (Number.isFinite(numScore)) {
+                        allScores.push(numScore);
+                        if (isWinner) {
+                            winningScores.push(numScore);
+                        }
+                    }
+                }
+            });
+        });
+
+        const hasScores = allScores.length > 0;
+        const avgScore = hasScores ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null;
+        const highScore = hasScores ? Math.max(...allScores) : null;
+        const lowScore = hasScores ? Math.min(...allScores) : null;
+        const avgWinningScore = winningScores.length > 0
+            ? winningScores.reduce((a, b) => a + b, 0) / winningScores.length
+            : null;
+
+        const players = Object.values(playerStatsMap)
+            .sort((a, b) => b.wins - a.wins || b.plays - a.plays || a.name.localeCompare(b.name));
+
+        const recentPlays = [...gamePlays]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 15);
+
+        return {
+            game,
+            playCount,
+            lastPlayed,
+            firstPlayed,
+            avgScore,
+            highScore,
+            lowScore,
+            avgWinningScore,
+            players,
+            recentPlays
+        };
+    }
+
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
         getOnceUponViewModel,
         getNextplayViewModel,
         getLastRecordedPlayDate,
-        getBggSchemaViewModel
+        getBggSchemaViewModel,
+        getGameStatsViewModel
     };
 })();

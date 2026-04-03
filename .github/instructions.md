@@ -19,3 +19,4 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 - always keep Learnings.md up to date if we learn something that should be remembered while implementing the code
 - check if any of the new or renamed files need to be added to gitignore
 - all visible text on UI should be english
+- use Architecture.md, README.md and Learnings.md for context

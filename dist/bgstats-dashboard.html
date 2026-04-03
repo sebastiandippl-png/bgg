@@ -61,6 +61,7 @@
                 <button data-tab-id="plays" id="tab-plays" class="pb-2 px-2 sm:px-3 md:px-0 whitespace-nowrap text-xs sm:text-sm text-gray-400 hover:text-white font-medium transition active:scale-95">Last Plays</button>
                 <button data-tab-id="onceupon" id="tab-onceupon" class="pb-2 px-2 sm:px-3 md:px-0 whitespace-nowrap text-xs sm:text-sm text-gray-400 hover:text-white font-medium transition active:scale-95">OnceUpon</button>
                 <button data-tab-id="nextplay" id="tab-nextplay" class="pb-2 px-2 sm:px-3 md:px-0 whitespace-nowrap text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 font-medium transition active:scale-95">Next!</button>
+                <button data-tab-id="gamestats" id="tab-gamestats" class="pb-2 px-2 sm:px-3 md:px-0 whitespace-nowrap text-xs sm:text-sm text-violet-400 hover:text-violet-300 font-medium transition active:scale-95">Game Stats</button>
                 <!-- tab-schema is shown only for admins via auth-ui.js -->
                 <button data-tab-id="schema" id="tab-schema" class="hidden pb-2 px-2 sm:px-3 md:px-0 whitespace-nowrap text-xs sm:text-sm text-yellow-400 hover:text-yellow-300 font-medium transition active:scale-95">Schema</button>
             </div>
@@ -90,6 +91,10 @@
             <div id="nextplay-content"></div>
         </div>
         
+        <div id="content-gamestats" class="tab-content hidden bg-gray-800 rounded-lg border border-violet-900/40 p-3 sm:p-4 md:p-6">
+            <div id="gamestats-content"></div>
+        </div>
+        
         <div id="content-schema" class="tab-content hidden bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-yellow-900/50 text-xs sm:text-sm"></div>
     </div>
 
@@ -104,6 +109,7 @@
     <script src="js/tabs/plays.js?v=20260404" defer></script>
     <script src="js/tabs/onceupon.js?v=20260404" defer></script>
     <script src="js/tabs/nextplay.js?v=20260404" defer></script>
+    <script src="js/tabs/gamestats.js?v=20260404" defer></script>
     <script src="js/tabs/schema.js?v=20260404" defer></script>
     <script src="js/app/dashboard.js?v=20260404" defer></script>
     <script src="script.js?v=20260404" defer></script>

@@ -9,7 +9,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'schema']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'schema']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -380,6 +380,19 @@ window.BGStatsDashboard = (function createDashboardModule() {
             });
             return;
         }
+
+        if (tabId === 'gamestats' && typeof window.renderGameStatsTab === 'function') {
+            const selectedId = window.BGStatsGameStats ? window.BGStatsGameStats.selectedGameId : null;
+            window.renderGameStatsTab({
+                allGames: state.games,
+                gameStatsData: window.BGStatsSelectors.getGameStatsViewModel(state, selectedId),
+                escapeHTML,
+                isValidImageUrl,
+                getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
+                targetId: 'gamestats-content'
+            });
+            return;
+        }
     }
 
     function setActiveTabStyles(tabId) {
@@ -401,6 +414,8 @@ window.BGStatsDashboard = (function createDashboardModule() {
             button.classList.add('border-b-2', 'border-emerald-500');
         } else if (tabId === 'onceupon') {
             button.classList.add('border-b-2', 'border-cyan-500');
+        } else if (tabId === 'gamestats') {
+            button.classList.add('border-b-2', 'border-violet-500');
         } else if (tabId === 'schema') {
             button.classList.add('border-b-2', 'border-yellow-500');
         } else {
