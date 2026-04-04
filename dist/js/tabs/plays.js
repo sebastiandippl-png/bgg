@@ -131,8 +131,9 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, chartData, allPlaye
 
         cardsHTML += `
             <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
-                <div class="w-full h-32 bg-gray-700 flex items-center justify-center">
+                <div class="w-full h-32 bg-gray-700 flex items-center justify-center relative">
                     <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
+                    ${play.isNotOwned ? '<div class="absolute top-2 left-2 bg-red-600/90 text-white text-xs px-2 py-1 rounded font-semibold">Not Owned</div>' : ''}
                 </div>
                 <div class="p-4">
                     <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${gameLink.href}"${gameLink.attrs} class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a>${gameLink.isExternal ? '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>' : ''}</h3>

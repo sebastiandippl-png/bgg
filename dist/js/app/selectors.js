@@ -187,10 +187,15 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 const d = play.Date ? new Date(play.Date) : null;
                 return d && !Number.isNaN(d.getTime()) && d >= cutoff;
             })
-            .map(play => ({
-                ...play,
-                game: gamesById.get(play.gameId) || null
-            }));
+            .map(play => {
+                const localGame = gamesById.get(play.gameId);
+                const bggId = String(play.gameId || '').trim().replace(/^bgg_/i, '');
+                return {
+                    ...play,
+                    game: localGame || null,
+                    isNotOwned: !localGame && !!bggId
+                };
+            });
     }
 
     function getMostPlayedByYearViewModel(state) {
