@@ -9,7 +9,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'playerstats']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'mostplayed', 'nextplay', 'gamestats', 'playerstats']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -368,6 +368,15 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
                 targetId: 'onceupon-content'
+            });
+            return;
+        }
+
+        if (tabId === 'mostplayed' && typeof window.renderMostPlayedTab === 'function') {
+            window.renderMostPlayedTab({
+                mostPlayedData: window.BGStatsSelectors.getMostPlayedByYearViewModel(state),
+                escapeHTML,
+                targetId: 'mostplayed-content'
             });
             return;
         }

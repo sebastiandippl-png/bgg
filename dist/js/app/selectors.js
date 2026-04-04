@@ -160,6 +160,88 @@ window.BGStatsSelectors = (function createSelectorModule() {
         }));
     }
 
+    function getMostPlayedByYearViewModel(state) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const last365Cutoff = new Date(now);
+        last365Cutoff.setDate(last365Cutoff.getDate() - 365);
+        const gamesById = new Map(state.games.map(game => [String(game.id), game]));
+        const yearlyBuckets = new Map();
+        const rollingWindowCounts = new Map();
+
+        state.plays.forEach(play => {
+            const playDate = play.Date ? new Date(play.Date) : null;
+            if (!playDate || Number.isNaN(playDate.getTime())) {
+                return;
+            }
+
+            const year = playDate.getFullYear();
+            if (!yearlyBuckets.has(year)) {
+                yearlyBuckets.set(year, new Map());
+            }
+
+            const yearlyCounts = yearlyBuckets.get(year);
+            const gameId = String(play.gameId || '').trim();
+            const fallbackName = String(play.Game || 'Unknown Game').trim() || 'Unknown Game';
+            const key = gameId ? `id:${gameId}` : `name:${fallbackName.toLowerCase()}`;
+
+            if (!yearlyCounts.has(key)) {
+                const matchedGame = gameId ? gamesById.get(gameId) : null;
+                yearlyCounts.set(key, {
+                    gameId: gameId || null,
+                    gameName: matchedGame && matchedGame.name ? matchedGame.name : fallbackName,
+                    weight: matchedGame && Number.isFinite(Number(matchedGame.weight)) ? Number(matchedGame.weight) : null,
+                    playCount: 0
+                });
+            }
+
+            const row = yearlyCounts.get(key);
+            row.playCount += 1;
+
+            if (playDate >= last365Cutoff && playDate <= now) {
+                if (!rollingWindowCounts.has(key)) {
+                    const matchedGameForWindow = gameId ? gamesById.get(gameId) : null;
+                    rollingWindowCounts.set(key, {
+                        gameId: gameId || null,
+                        gameName: matchedGameForWindow && matchedGameForWindow.name ? matchedGameForWindow.name : fallbackName,
+                        weight: matchedGameForWindow && Number.isFinite(Number(matchedGameForWindow.weight)) ? Number(matchedGameForWindow.weight) : null,
+                        playCount: 0
+                    });
+                }
+                rollingWindowCounts.get(key).playCount += 1;
+            }
+        });
+
+        if (!yearlyBuckets.has(currentYear)) {
+            yearlyBuckets.set(currentYear, new Map());
+        }
+
+        const years = [...yearlyBuckets.keys()].sort((a, b) => b - a);
+
+        const yearCards = years.map(year => {
+            const rows = [...yearlyBuckets.get(year).values()]
+                .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+
+            return {
+                year,
+                isCurrentYear: year === currentYear,
+                games: rows
+            };
+        });
+
+        const last365DaysGames = [...rollingWindowCounts.values()]
+            .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+
+        return {
+            currentYear,
+            last365Days: {
+                label: 'Last 365 Days',
+                games: last365DaysGames
+            },
+            years: yearCards
+        };
+    }
+
     function getNextplayViewModel(state) {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -720,6 +802,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
+        getMostPlayedByYearViewModel,
         getOnceUponViewModel,
         getNextplayViewModel,
         getLastRecordedPlayDate,
