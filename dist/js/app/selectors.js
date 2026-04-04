@@ -745,6 +745,24 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const sortedByDateDesc = [...playerPlays].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         const firstPlay = sortedByDateAsc[0] || null;
         const lastPlay = sortedByDateDesc[0] || null;
+        const winsCount = playerPlays.reduce((accumulator, play) => accumulator + (play.isWin ? 1 : 0), 0);
+
+        const longestPlay = playerPlays.reduce((currentLongest, play) => {
+            const duration = Number(play.durationMin !== undefined ? play.durationMin : play.Duration);
+            if (!Number.isFinite(duration) || duration <= 0) {
+                return currentLongest;
+            }
+            if (!currentLongest || duration > currentLongest.durationMin) {
+                return {
+                    durationMin: duration,
+                    gameId: String(play.gameId || ''),
+                    gameName: play.Game,
+                    game: play.game,
+                    date: play.Date
+                };
+            }
+            return currentLongest;
+        }, null);
 
         const winsByGame = {};
         playerPlays.forEach(play => {
@@ -765,6 +783,24 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         const mostWonGames = Object.values(winsByGame)
             .sort((a, b) => b.wins - a.wins || a.gameName.localeCompare(b.gameName))
+            .slice(0, 10);
+
+        const playsByGame = {};
+        playerPlays.forEach(play => {
+            const gameId = String(play.gameId || '');
+            if (!playsByGame[gameId]) {
+                playsByGame[gameId] = {
+                    gameId,
+                    gameName: play.Game,
+                    plays: 0,
+                    game: play.game
+                };
+            }
+            playsByGame[gameId].plays += 1;
+        });
+
+        const mostPlayedGames = Object.values(playsByGame)
+            .sort((a, b) => b.plays - a.plays || a.gameName.localeCompare(b.gameName))
             .slice(0, 10);
 
         const highScoreByGame = {};
@@ -823,9 +859,12 @@ window.BGStatsSelectors = (function createSelectorModule() {
         return {
             player,
             playCount,
+            winsCount,
             firstPlay,
             lastPlay,
+            longestPlay,
             mostWonGames,
+            mostPlayedGames,
             recordHighGames,
             recentPlays
         };
