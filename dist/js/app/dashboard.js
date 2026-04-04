@@ -9,7 +9,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'mostplayed', 'nextplay', 'gamestats', 'playerstats']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'mostplayed', 'nextplay', 'gamestats', 'playerstats', 'admin']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -777,8 +777,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 if (config.reloadDbOnSuccess) {
                     const reloadedDbFromStatus = await loadDatabaseFromServer();
                     if (reloadedDbFromStatus) {
-                        hydrateDatabase(reloadedDbFromStatus);
-                            switchTab('insights');
+                        hydrateDatabase(reloadedDbFromStatus);                            if (activeTabId !== 'admin') switchTab('insights');
                     }
                 }
 
@@ -796,7 +795,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
                         const reloadedDbFromTerminalStatus = await loadDatabaseFromServer();
                         if (reloadedDbFromTerminalStatus) {
                             hydrateDatabase(reloadedDbFromTerminalStatus);
-                            switchTab('insights');
                         }
                     }
 
@@ -818,7 +816,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 const reloadedDb = await loadDatabaseFromServer();
                 if (reloadedDb) {
                     hydrateDatabase(reloadedDb);
-                    switchTab('insights');
                 }
             }
 
