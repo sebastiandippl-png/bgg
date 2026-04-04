@@ -278,6 +278,25 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
+        function sortByLongestNotPlayed(games) {
+            return [...games].sort((a, b) => {
+                const aDate = a.lastPlayed ? new Date(a.lastPlayed) : null;
+                const bDate = b.lastPlayed ? new Date(b.lastPlayed) : null;
+
+                // Never played should be shown first.
+                if (!aDate && bDate) { return -1; }
+                if (aDate && !bDate) { return 1; }
+
+                const aTime = aDate ? aDate.getTime() : Number.NEGATIVE_INFINITY;
+                const bTime = bDate ? bDate.getTime() : Number.NEGATIVE_INFINITY;
+                if (aTime !== bTime) {
+                    return aTime - bTime;
+                }
+
+                return String(a.name || '').localeCompare(String(b.name || ''));
+            });
+        }
+
         const eligibleGames = state.games.filter(game => {
             if (game.isExpansion || !game.owned) {
                 return false;
@@ -299,19 +318,19 @@ window.BGStatsSelectors = (function createSelectorModule() {
                     id: 'complex',
                     title: 'Long, Complex & Gamers Games (min duration > 30 & max duration> 90)',
                     titleClass: 'text-blue-400',
-                    games: window.sortDataUtil(complexGames, state.sort.nextplay)
+                    games: sortByLongestNotPlayed(complexGames)
                 },
                 {
                     id: 'medium',
                     title: 'Mid-Length Games (min duration > 30 & max duration> 60)',
                     titleClass: 'text-green-400',
-                    games: window.sortDataUtil(mediumGames, state.sort.nextplay)
+                    games: sortByLongestNotPlayed(mediumGames)
                 },
                 {
                     id: 'light',
                     title: 'Casual, Simple & Short Games (max duration ≤ 60)',
                     titleClass: 'text-yellow-400',
-                    games: window.sortDataUtil(lightGames, state.sort.nextplay)
+                    games: sortByLongestNotPlayed(lightGames)
                 }
             ]
         };

@@ -1,10 +1,4 @@
-window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, escapeHTML, targetId = 'nextplay-content' }) {
-    const getSortIcon = (key) => {
-        if (sortConfig.col !== key) return '↕';
-        return sortConfig.asc ? '▲' : '▼';
-    };
-
-    const getSortClass = (key) => (sortConfig.col === key ? 'text-blue-400' : 'text-gray-500 hover:text-gray-300');
+window.renderNextplayTab = function renderNextplayTab({ groups, escapeHTML, targetId = 'nextplay-content' }) {
 
     function generateNextplayCardsHTML(dataArray) {
         if (dataArray.length === 0) {
@@ -78,17 +72,6 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
         ${groups.map((group, index) => `
         <div class="${index < groups.length - 1 ? 'mb-8' : ''}">
             <h3 class="text-xl ${group.titleClass} font-bold mb-3">${escapeHTML(group.title)}</h3>
-            <div class="mb-3 flex flex-wrap gap-2 text-xs">
-                <button class="px-2.5 py-1.5 rounded border border-gray-600 ${getSortClass('name')}" data-sort-tab="nextplay" data-sort-col="name">
-                    Name ${getSortIcon('name')}
-                </button>
-                <button class="px-2.5 py-1.5 rounded border border-gray-600 ${getSortClass('maxPlayers')}" data-sort-tab="nextplay" data-sort-col="maxPlayers">
-                    Players ${getSortIcon('maxPlayers')}
-                </button>
-                <button class="px-2.5 py-1.5 rounded border border-gray-600 ${getSortClass('lastPlayed')}" data-sort-tab="nextplay" data-sort-col="lastPlayed">
-                    Last Played ${getSortIcon('lastPlayed')}
-                </button>
-            </div>
             <div class="bg-gray-900 rounded-lg border border-gray-700">
                 ${generateNextplayCardsHTML(group.games)}
             </div>

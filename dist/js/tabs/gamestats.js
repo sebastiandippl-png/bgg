@@ -173,6 +173,116 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         return escapeHTML(Number(val).toFixed(decimals)) + ' min';
     }
 
+    function renderPlaysTimelineChart(plays) {
+        var rows = Array.isArray(plays) ? plays : [];
+        if (rows.length === 0) {
+            return '<div class="mt-4 pt-3 border-t border-gray-700/50">'
+                + '<div class="text-xs text-gray-500 mb-2">Plays Over Time</div>'
+                + '<div class="text-xs text-gray-600 italic">No play data for timeline.</div>'
+                + '</div>';
+        }
+
+        function toMonthKey(dateValue) {
+            var parts = String(dateValue || '').split('-');
+            if (parts.length < 2) {
+                return null;
+            }
+            var year = Number(parts[0]);
+            var month = Number(parts[1]);
+            if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+                return null;
+            }
+            return String(year) + '-' + String(month).padStart(2, '0');
+        }
+
+        var monthlyCounts = {};
+        rows.forEach(function (play) {
+            var key = toMonthKey(play && play.Date);
+            if (!key) {
+                return;
+            }
+            if (!monthlyCounts[key]) {
+                monthlyCounts[key] = 0;
+            }
+            monthlyCounts[key] += 1;
+        });
+
+        var availableMonths = Object.keys(monthlyCounts).sort();
+        if (availableMonths.length === 0) {
+            return '<div class="mt-4 pt-3 border-t border-gray-700/50">'
+                + '<div class="text-xs text-gray-500 mb-2">Plays Over Time</div>'
+                + '<div class="text-xs text-gray-600 italic">No play data for timeline.</div>'
+                + '</div>';
+        }
+
+        var firstParts = availableMonths[0].split('-');
+        var lastParts = availableMonths[availableMonths.length - 1].split('-');
+        var firstYear = Number(firstParts[0]);
+        var firstMonth = Number(firstParts[1]);
+        var lastYear = Number(lastParts[0]);
+        var lastMonth = Number(lastParts[1]);
+
+        var monthSeries = [];
+        var cursorYear = firstYear;
+        var cursorMonth = firstMonth;
+        while (cursorYear < lastYear || (cursorYear === lastYear && cursorMonth <= lastMonth)) {
+            var monthKey = String(cursorYear) + '-' + String(cursorMonth).padStart(2, '0');
+            monthSeries.push({
+                key: monthKey,
+                count: monthlyCounts[monthKey] || 0
+            });
+            cursorMonth += 1;
+            if (cursorMonth > 12) {
+                cursorMonth = 1;
+                cursorYear += 1;
+            }
+        }
+
+        var maxCount = monthSeries.reduce(function (maxVal, entry) {
+            return Math.max(maxVal, entry.count);
+        }, 0);
+
+        var width = 300;
+        var height = 92;
+        var chartLeft = 8;
+        var chartRight = 8;
+        var chartTop = 8;
+        var chartBottom = 22;
+        var chartWidth = width - chartLeft - chartRight;
+        var chartHeight = height - chartTop - chartBottom;
+        var barGap = 1;
+        var barWidth = Math.max(1, Math.floor((chartWidth - Math.max(0, monthSeries.length - 1) * barGap) / monthSeries.length));
+        var barsTotalWidth = barWidth * monthSeries.length + Math.max(0, monthSeries.length - 1) * barGap;
+        var startX = chartLeft + Math.max(0, Math.floor((chartWidth - barsTotalWidth) / 2));
+
+        var bars = monthSeries.map(function (entry, index) {
+            var ratio = maxCount > 0 ? (entry.count / maxCount) : 0;
+            var barHeight = Math.max(1, Math.round(ratio * chartHeight));
+            var x = startX + index * (barWidth + barGap);
+            var y = chartTop + (chartHeight - barHeight);
+            var safeTitle = escapeHTML(entry.key + ': ' + String(entry.count) + ' plays');
+            return '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" rx="1" fill="#8b5cf6">'
+                + '<title>' + safeTitle + '</title>'
+                + '</rect>';
+        }).join('');
+
+        var firstLabel = escapeHTML(monthSeries[0].key);
+        var lastLabel = escapeHTML(monthSeries[monthSeries.length - 1].key);
+
+        return '<div class="mt-4 pt-3 border-t border-gray-700/50">'
+            + '<div class="text-xs text-gray-500 mb-2">Plays Over Time</div>'
+            + '<svg viewBox="0 0 ' + width + ' ' + height + '" class="w-full h-24" role="img" aria-label="Plays over time chart">'
+            + '<line x1="' + chartLeft + '" y1="' + (chartTop + chartHeight) + '" x2="' + (width - chartRight) + '" y2="' + (chartTop + chartHeight) + '" stroke="#374151" stroke-width="1" />'
+            + bars
+            + '</svg>'
+            + '<div class="flex items-center justify-between text-[10px] text-gray-500 mt-1">'
+            + '<span>' + firstLabel + '</span>'
+            + '<span>max ' + escapeHTML(String(maxCount)) + '/month</span>'
+            + '<span>' + lastLabel + '</span>'
+            + '</div>'
+            + '</div>';
+    }
+
     function renderDetailView(data) {
         var game = data.game;
         var playCount = data.playCount;
@@ -256,6 +366,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(longestPlaytimeMin, 0) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Average Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(averagePlaytimeMin, 1) + '</dd></div>'
             + '</dl>'
+            + renderPlaysTimelineChart(recentPlays)
             + '</div>';
 
         // -- Scores block (only if there are scores) --
