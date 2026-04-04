@@ -8,7 +8,7 @@ window.renderNextplayTab = function renderNextplayTab({ groups, sortConfig, esca
 
     function generateNextplayCardsHTML(dataArray) {
         if (dataArray.length === 0) {
-            return `<div class="p-4 text-gray-500 italic">No games found in this category.</div>`;
+            return `<div class="p-4 text-gray-500 italic">🗂️ No games found in this category.</div>`;
         }
 
         let html = '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3 p-3">';

@@ -38,7 +38,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
 
     function renderPlayCards(plays) {
         if (plays.length === 0) {
-            return '<div class="p-4 text-gray-500 italic">No plays recorded on this date.</div>';
+            return '<div class="p-4 text-gray-500 italic">🗂️ No plays recorded on this date.</div>';
         }
 
         let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">';

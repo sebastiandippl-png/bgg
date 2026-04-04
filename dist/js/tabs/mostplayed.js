@@ -13,7 +13,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
     var overallRows = Array.isArray(overall.games) ? overall.games : [];
 
     if (years.length === 0 && last365Rows.length === 0 && overallRows.length === 0) {
-        container.innerHTML = '<div class="text-sm text-gray-400">No play data available.</div>';
+        container.innerHTML = '<div class="text-sm text-gray-400">🎲 No play data available.</div>';
         return;
     }
 
@@ -58,7 +58,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         if (limitedRows.length === 0) {
             return '<div class="rounded border border-gray-700/50 p-3">'
                 + '<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">' + escapeHTML(title) + '</h4>'
-                + '<div class="text-xs text-gray-600 italic">No entries.</div>'
+                + '<div class="text-xs text-gray-600 italic">🗂️ No entries.</div>'
                 + '</div>';
         }
 
@@ -78,7 +78,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + '</div>';
 
     var topCard = '<section class="rounded-lg border border-amber-700/40 bg-amber-900/10 p-4">'
-        + '<h3 class="text-sm font-semibold uppercase tracking-wider text-amber-300 mb-3">' + escapeHTML(String(last365Days.label || 'Last 365 Days')) + '</h3>'
+        + '<h3 class="text-sm font-semibold uppercase tracking-wider text-amber-300 mb-3">🗓️ ' + escapeHTML(String(last365Days.label || 'Last 365 Days')) + '</h3>'
         + '<p class="text-xs text-amber-200/80 mb-3">'
         + escapeHTML(String(last365Days.totalPlays || 0)) + ' plays · '
         + escapeHTML(String(last365Days.uniqueGames || 0)) + ' unique games'
@@ -94,7 +94,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + '</div>';
 
     var overallCard = '<section class="rounded-lg border border-gray-700 bg-gray-900/30 p-4">'
-        + '<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">' + escapeHTML(String(overall.label || 'Overall')) + '</h3>'
+        + '<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">🌍 ' + escapeHTML(String(overall.label || 'Overall')) + '</h3>'
         + '<p class="text-xs text-gray-500 mb-3">'
         + escapeHTML(String(overall.totalPlays || 0)) + ' plays · '
         + escapeHTML(String(overall.uniqueGames || 0)) + ' unique games'
@@ -113,7 +113,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
 
         return '<section class="rounded-lg border border-gray-700 bg-gray-900/30 p-4">'
             + '<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">'
-            + escapeHTML(String(yearEntry.year))
+            + '🗓️ ' + escapeHTML(String(yearEntry.year))
             + '</h3>'
             + '<p class="text-xs text-gray-500 mb-3">'
             + escapeHTML(String(yearEntry.totalPlays || 0)) + ' plays · '

@@ -49,7 +49,7 @@ window.BGStatsPlayerStats = (function createPlayerStatsModule() {
         _currentMatches = matches;
 
         if (matches.length === 0) {
-            dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">No players found</div>';
+            dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">🗂️ No players found</div>';
         } else {
             dropdown.innerHTML = matches.map(function (player, index) {
                 var safeName = String(player.name || '')
@@ -108,7 +108,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
 
     function renderSearchView() {
         return '<div class="max-w-xl mx-auto pt-8 pb-4 px-2 sm:px-4">'
-            + '<h2 class="text-lg font-semibold text-gray-200 mb-4">Search for a player</h2>'
+            + '<h2 class="text-lg font-semibold text-gray-200 mb-4">🔎 Search for a player</h2>'
             + '<div class="relative">'
             + '<input'
             + ' id="playerstats-search-input"'
@@ -161,7 +161,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
 
         var summaryBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Summary</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">📊 Summary</h3>'
             + '<dl class="space-y-2 text-sm">'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Plays</dt><dd class="text-rose-400 font-bold text-right">' + escapeHTML(String(playCount)) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Games Won</dt><dd class="text-amber-400 font-semibold text-right">' + escapeHTML(String(winsCount || 0)) + '</dd></div>'
@@ -172,7 +172,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             + '</div>';
 
         var mostPlayedGamesBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Most Played Games</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🎲 Most Played Games</h3>'
             + (mostPlayedGames.length > 0
                 ? '<div class="space-y-2">' + mostPlayedGames.map(function (entry, index) {
                     return '<div class="flex items-center gap-3 text-sm">'
@@ -181,11 +181,11 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         + '<span class="text-fuchsia-300 text-xs shrink-0">' + escapeHTML(String(entry.plays)) + ' plays</span>'
                         + '</div>';
                 }).join('') + '</div>'
-                : '<div class="text-sm text-gray-500 italic">No plays found for this player.</div>')
+                : '<div class="text-sm text-gray-500 italic">🗂️ No plays found for this player.</div>')
             + '</div>';
 
         var winsBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Games Won Most Often</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🏆 Games Won Most Often</h3>'
             + (mostWonGames.length > 0
                 ? '<div class="space-y-2">' + mostWonGames.map(function (entry, index) {
                     return '<div class="flex items-center gap-3 text-sm">'
@@ -198,7 +198,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             + '</div>';
 
         var recordsBlock = '<div class="rounded-lg border border-gray-700 p-4 md:col-span-2">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Record High Scores</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">📈 Record High Scores</h3>'
             + (recordHighGames.length > 0
                 ? '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">' + recordHighGames.map(function (entry) {
                     return '<div class="rounded-lg border border-gray-700/60 bg-gray-900/40 p-3">'
@@ -213,7 +213,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             + '</div>';
 
         var recentPlaysBlock = '<div class="rounded-lg border border-gray-700 p-4 md:col-span-2">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Last Plays</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🕘 Last Plays</h3>'
             + (recentPlays.length > 0
                 ? '<div>' + recentPlays.map(function (play) {
                     var scoreValue = play.matchingScore && play.matchingScore.score !== null && play.matchingScore.score !== undefined && play.matchingScore.score !== ''
@@ -226,7 +226,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         + '<span class="' + (play.isWin ? 'text-amber-400' : 'text-gray-600') + ' shrink-0">' + (play.isWin ? '🏆 Win' : '') + '</span>'
                         + '</div>';
                 }).join('') + '</div>'
-                : '<div class="text-sm text-gray-500 italic">No plays found for this player.</div>')
+                : '<div class="text-sm text-gray-500 italic">🗂️ No plays found for this player.</div>')
             + '</div>';
 
         return '<div>'

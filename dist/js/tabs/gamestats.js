@@ -49,7 +49,7 @@ window.BGStatsGameStats = (function createGameStatsModule() {
         _currentMatches = matches;
 
         if (matches.length === 0) {
-            dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">No games found</div>';
+            dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">🗂️ No games found</div>';
         } else {
             dropdown.innerHTML = matches.map(function (g, i) {
                 var safeName = String(g.name || '')
@@ -132,7 +132,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
 
     function renderSearchView() {
         return '<div class="max-w-xl mx-auto pt-8 pb-4 px-2 sm:px-4">'
-            + '<h2 class="text-lg font-semibold text-gray-200 mb-4">Search for a game</h2>'
+            + '<h2 class="text-lg font-semibold text-gray-200 mb-4">🔎 Search for a game</h2>'
             + '<div class="relative">'
             + '<input'
             + ' id="gamestats-search-input"'
@@ -241,13 +241,13 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         if (game.geekRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Geek Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.geekRating) + '</dd></div>'; }
 
         var gameInfoBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Game Info</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🎲 Game Info</h3>'
             + '<dl class="space-y-2 text-sm">' + gameInfoRows + '</dl>'
             + '</div>';
 
         // -- Play history block --
         var playHistoryBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Play Summary</h3>'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">📊 Play Summary</h3>'
             + '<dl class="space-y-2 text-sm">'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Total Plays</dt><dd class="text-violet-400 font-bold text-right">' + escapeHTML(String(playCount)) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Played</dt><dd class="text-gray-200 text-right">' + fmt(lastPlayed) + '</dd></div>'
@@ -262,7 +262,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         var scoresBlock = '';
         if (avgScore !== null) {
             scoresBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Scores</h3>'
+                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🧮 Scores</h3>'
                 + '<dl class="grid grid-cols-2 gap-3 text-sm">'
                 + '<div><dt class="text-xs text-gray-500">Average</dt><dd class="text-gray-200 font-medium mt-0.5">' + fmtNum(avgScore) + '</dd></div>'
                 + '<div><dt class="text-xs text-gray-500">Highest</dt><dd class="text-green-400 font-medium mt-0.5">' + highestWithNames + '</dd></div>'
@@ -290,7 +290,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             }).join('');
 
             playersBlock = '<div class="rounded-lg border border-gray-700 p-4">'
-                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Player Leaderboard</h3>'
+                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">👥 Player Leaderboard</h3>'
                 + '<div class="space-y-2.5">' + playerRows + '</div>'
                 + '</div>';
         }
@@ -325,7 +325,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             }).join('');
 
             recentPlaysBlock = '<div class="rounded-lg border border-gray-700 p-4 md:col-span-2">'
-                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Recent Plays</h3>'
+                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🕘 Recent Plays</h3>'
                 + '<div>' + playRows + '</div>'
                 + '</div>';
         }
