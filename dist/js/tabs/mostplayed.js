@@ -20,15 +20,18 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
     function splitByWeight(rows) {
         return rows.reduce(function (acc, game) {
             var weight = Number(game && game.weight);
-            if (Number.isFinite(weight) && weight > 2) {
-                acc.over.push(game);
+            if (Number.isFinite(weight) && weight > 3) {
+                acc.heavy.push(game);
+            } else if (Number.isFinite(weight) && weight > 1.8) {
+                acc.medium.push(game);
             } else {
-                acc.underOrEqual.push(game);
+                acc.light.push(game);
             }
             return acc;
         }, {
-            underOrEqual: [],
-            over: []
+            heavy: [],
+            medium: [],
+            light: []
         });
     }
 
@@ -68,9 +71,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
     }
 
     var topSplit = splitByWeight(last365Rows);
-    var topCardListMarkup = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
-        + renderListBlock('Weight <= 2', topSplit.underOrEqual, { maxEntries: 10 })
-        + renderListBlock('Weight > 2', topSplit.over, { maxEntries: 10 })
+    var topCardListMarkup = '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
+        + renderListBlock('Weight > 3', topSplit.heavy, { maxEntries: 10 })
+        + renderListBlock('Weight > 1.8 and <= 3', topSplit.medium, { maxEntries: 10 })
+        + renderListBlock('Weight <= 1.8', topSplit.light, { maxEntries: 10 })
         + '</div>';
 
     var topCard = '<section class="rounded-lg border border-amber-700/40 bg-amber-900/10 p-4">'
@@ -83,9 +87,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + '</section>';
 
     var overallSplit = splitByWeight(overallRows);
-    var overallCardListMarkup = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
-        + renderListBlock('Weight <= 2', overallSplit.underOrEqual, { maxEntries: 10 })
-        + renderListBlock('Weight > 2', overallSplit.over, { maxEntries: 10 })
+    var overallCardListMarkup = '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
+        + renderListBlock('Weight > 3', overallSplit.heavy, { maxEntries: 10 })
+        + renderListBlock('Weight > 1.8 and <= 3', overallSplit.medium, { maxEntries: 10 })
+        + renderListBlock('Weight <= 1.8', overallSplit.light, { maxEntries: 10 })
         + '</div>';
 
     var overallCard = '<section class="rounded-lg border border-gray-700 bg-gray-900/30 p-4">'
@@ -100,9 +105,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
     var cards = years.map(function (yearEntry) {
         var rows = Array.isArray(yearEntry.games) ? yearEntry.games : [];
         var split = splitByWeight(rows);
-        var yearLists = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
-            + renderListBlock('Weight <= 2', split.underOrEqual, { maxEntries: 10 })
-            + renderListBlock('Weight > 2', split.over, { maxEntries: 10 })
+        var yearLists = '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
+            + renderListBlock('Weight > 3', split.heavy, { maxEntries: 10 })
+            + renderListBlock('Weight > 1.8 and <= 3', split.medium, { maxEntries: 10 })
+            + renderListBlock('Weight <= 1.8', split.light, { maxEntries: 10 })
             + '</div>';
 
         return '<section class="rounded-lg border border-gray-700 bg-gray-900/30 p-4">'
