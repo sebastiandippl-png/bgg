@@ -137,6 +137,30 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 : (anneVsSebLeader === 'sebastian' ? 'Sebastian leads' : 'Currently tied'),
         };
 
+        const monthlyPlayCounts = {};
+        state.plays.forEach(play => {
+            const parts = String(play.Date || '').split('-');
+            if (parts.length < 2) return;
+            const year = Number(parts[0]);
+            const month = Number(parts[1]);
+            if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return;
+            const key = String(year) + '-' + String(month).padStart(2, '0');
+            monthlyPlayCounts[key] = (monthlyPlayCounts[key] || 0) + 1;
+        });
+        const monthKeys = Object.keys(monthlyPlayCounts).sort();
+        const playsOverTime = [];
+        if (monthKeys.length > 0) {
+            const [fy, fm] = monthKeys[0].split('-').map(Number);
+            const [ly, lm] = monthKeys[monthKeys.length - 1].split('-').map(Number);
+            let cy = fy, cm = fm;
+            while (cy < ly || (cy === ly && cm <= lm)) {
+                const key = String(cy) + '-' + String(cm).padStart(2, '0');
+                playsOverTime.push({ key, count: monthlyPlayCounts[key] || 0 });
+                cm++;
+                if (cm > 12) { cm = 1; cy++; }
+            }
+        }
+
         return {
             hIndex,
             totalPlays,
@@ -146,18 +170,27 @@ window.BGStatsSelectors = (function createSelectorModule() {
             exactGames,
             latestOwnedPurchase,
             lastModifiedGame,
-            anneVsSeb
+            anneVsSeb,
+            playsOverTime
         };
     }
 
     function getRecentPlaysViewModel(state) {
         const sortedPlays = window.sortDataUtil(state.plays, state.sort.plays);
         const gamesById = new Map(state.games.map(game => [game.id, game]));
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 27);
+        cutoff.setHours(0, 0, 0, 0);
 
-        return sortedPlays.slice(0, 25).map(play => ({
-            ...play,
-            game: gamesById.get(play.gameId) || null
-        }));
+        return sortedPlays
+            .filter(play => {
+                const d = play.Date ? new Date(play.Date) : null;
+                return d && !Number.isNaN(d.getTime()) && d >= cutoff;
+            })
+            .map(play => ({
+                ...play,
+                game: gamesById.get(play.gameId) || null
+            }));
     }
 
     function getMostPlayedByYearViewModel(state) {
@@ -888,9 +921,29 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function getPlaysChartViewModel(state) {
+        const now = new Date();
+        const days = [];
+        for (let i = 27; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            days.push({ key, count: 0 });
+        }
+        const dayMap = new Map(days.map(d => [d.key, d]));
+        state.plays.forEach(play => {
+            const dateKey = String(play.Date || '').trim().slice(0, 10);
+            if (dayMap.has(dateKey)) {
+                dayMap.get(dateKey).count++;
+            }
+        });
+        return days;
+    }
+
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
+        getPlaysChartViewModel,
         getMostPlayedByYearViewModel,
         getOnceUponViewModel,
         getNextplayViewModel,

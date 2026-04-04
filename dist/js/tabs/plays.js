@@ -1,4 +1,39 @@
-window.renderPlaysTab = function renderPlaysTab({ playsData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'plays-table' }) {
+function renderPlays4WeekChart(chartData) {
+    if (!Array.isArray(chartData) || chartData.length === 0) return '';
+    const maxCount = Math.max(1, ...chartData.map(d => d.count));
+    const totalPlays = chartData.reduce((s, d) => s + d.count, 0);
+    const W = 420, H = 72;
+    const slotW = 15, barW = 12, topPad = 4, baseY = H - 14, chartH = baseY - topPad;
+
+    let bars = '';
+    let labels = '';
+    chartData.forEach((d, i) => {
+        const x = i * slotW;
+        const barH = d.count > 0 ? Math.max(2, Math.round((d.count / maxCount) * chartH)) : 0;
+        const y = baseY - barH;
+        bars += `<rect x="${x + 1.5}" y="${y}" width="${barW}" height="${barH}" fill="#8b5cf6" rx="1"/>`;
+        if (i % 7 === 0) {
+            const date = new Date(d.key + 'T12:00:00');
+            const label = (date.getMonth() + 1) + '/' + date.getDate();
+            labels += `<text x="${x + 7.5}" y="${H - 1}" text-anchor="middle" font-size="7" fill="#6b7280">${label}</text>`;
+        }
+    });
+
+    return `
+        <div class="mb-4 rounded-lg border border-violet-900/40 bg-gray-900/60 px-3 pt-3 pb-2">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-semibold text-violet-300">📈 Last 4 Weeks</span>
+                <span class="text-xs text-gray-500">${totalPlays} play${totalPlays !== 1 ? 's' : ''} &middot; max ${maxCount}/day</span>
+            </div>
+            <svg viewBox="0 0 ${W} ${H}" class="w-full" style="height:64px;" aria-hidden="true">
+                <line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="#374151" stroke-width="1"/>
+                ${bars}
+                ${labels}
+            </svg>
+        </div>`;
+}
+
+window.renderPlaysTab = function renderPlaysTab({ playsData, chartData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'plays-table' }) {
     const recentPlays = playsData;
     let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">';
 
@@ -87,5 +122,5 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlayers, escapeH
     });
 
     cardsHTML += '</div>';
-    document.getElementById(targetId).innerHTML = cardsHTML;
+    document.getElementById(targetId).innerHTML = renderPlays4WeekChart(chartData) + cardsHTML;
 };

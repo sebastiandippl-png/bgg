@@ -1,3 +1,58 @@
+function renderInsightsAllPlaysChart(playsOverTime, escapeHTML) {
+    const series = Array.isArray(playsOverTime) ? playsOverTime : [];
+    if (series.length === 0) {
+        return '<div class="col-span-full bg-gray-800 p-6 rounded-lg border border-gray-700">'
+            + '<h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">📈 All Plays Over Time</h3>'
+            + '<p class="text-sm text-gray-500">No play data available.</p>'
+            + '</div>';
+    }
+
+    const maxCount = series.reduce((m, d) => Math.max(m, d.count), 0) || 1;
+    const totalPlaysChart = series.reduce((s, d) => s + d.count, 0);
+    const W = 560, H = 100;
+    const top = 6, bottom = 18, left = 4, right = 4;
+    const chartW = W - left - right;
+    const chartH = H - top - bottom;
+    const n = series.length;
+    const barGap = n > 36 ? 0 : 1;
+    const barW = Math.max(1, Math.floor((chartW - Math.max(0, n - 1) * barGap) / n));
+    const startX = left + Math.max(0, Math.floor((chartW - (barW * n + Math.max(0, n - 1) * barGap)) / 2));
+    const baseY = top + chartH;
+
+    let bars = '';
+    let labels = '';
+    series.forEach((d, i) => {
+        const ratio = d.count / maxCount;
+        const bh = Math.max(ratio > 0 ? 2 : 0, Math.round(ratio * chartH));
+        const x = startX + i * (barW + barGap);
+        const y = baseY - bh;
+        const safeTitle = escapeHTML(d.key + ': ' + d.count + ' plays');
+        bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="1" fill="#8b5cf6"><title>${safeTitle}</title></rect>`;
+        const isJan = d.key.endsWith('-01');
+        if (isJan || (n <= 24 && i % 3 === 0) || (n > 24 && n <= 60 && isJan)) {
+            if (n <= 60 || isJan) {
+                labels += `<text x="${x + barW / 2}" y="${H - 2}" text-anchor="middle" font-size="7" fill="#6b7280">${escapeHTML(d.key.slice(0, 7))}</text>`;
+            }
+        }
+    });
+
+    return `<div class="col-span-full bg-gray-800 p-6 rounded-lg border border-gray-700">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-gray-400 text-sm uppercase tracking-wider">📈 All Plays Over Time</h3>
+            <span class="text-xs text-gray-500">${totalPlaysChart} total · max ${maxCount}/month</span>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" class="w-full" style="height:88px;" role="img" aria-label="All plays over time">
+            <line x1="${left}" y1="${baseY}" x2="${W - right}" y2="${baseY}" stroke="#374151" stroke-width="1"/>
+            ${bars}
+            ${labels}
+        </svg>
+        <div class="flex justify-between text-[10px] text-gray-600 mt-1">
+            <span>${escapeHTML(series[0].key)}</span>
+            <span>${escapeHTML(series[series.length - 1].key)}</span>
+        </div>
+    </div>`;
+}
+
 window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'content-insights' }) {
     const {
         hIndex,
@@ -8,7 +63,8 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers
         exactGames,
         latestOwnedPurchase,
         lastModifiedGame,
-        anneVsSeb
+        anneVsSeb,
+        playsOverTime
     } = insightsData;
     const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
 
@@ -119,6 +175,7 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers
         </div>
         ${anneVsSebMarkup}
         ${lastModifiedMarkup}
+        ${renderInsightsAllPlaysChart(playsOverTime, escapeHTML)}
         </div>
     `;
 };
