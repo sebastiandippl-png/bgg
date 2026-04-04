@@ -167,7 +167,9 @@ window.BGStatsSelectors = (function createSelectorModule() {
         last365Cutoff.setDate(last365Cutoff.getDate() - 365);
         const gamesById = new Map(state.games.map(game => [String(game.id), game]));
         const yearlyBuckets = new Map();
+        const yearlyTotalPlays = new Map();
         const rollingWindowCounts = new Map();
+        let rollingWindowTotalPlays = 0;
 
         state.plays.forEach(play => {
             const playDate = play.Date ? new Date(play.Date) : null;
@@ -178,6 +180,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
             const year = playDate.getFullYear();
             if (!yearlyBuckets.has(year)) {
                 yearlyBuckets.set(year, new Map());
+                yearlyTotalPlays.set(year, 0);
             }
 
             const yearlyCounts = yearlyBuckets.get(year);
@@ -197,8 +200,10 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
             const row = yearlyCounts.get(key);
             row.playCount += 1;
+            yearlyTotalPlays.set(year, (yearlyTotalPlays.get(year) || 0) + 1);
 
             if (playDate >= last365Cutoff && playDate <= now) {
+                rollingWindowTotalPlays += 1;
                 if (!rollingWindowCounts.has(key)) {
                     const matchedGameForWindow = gameId ? gamesById.get(gameId) : null;
                     rollingWindowCounts.set(key, {
@@ -214,6 +219,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         if (!yearlyBuckets.has(currentYear)) {
             yearlyBuckets.set(currentYear, new Map());
+            yearlyTotalPlays.set(currentYear, 0);
         }
 
         const years = [...yearlyBuckets.keys()].sort((a, b) => b - a);
@@ -225,6 +231,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
             return {
                 year,
                 isCurrentYear: year === currentYear,
+                totalPlays: yearlyTotalPlays.get(year) || 0,
+                uniqueGames: yearlyBuckets.get(year).size,
                 games: rows
             };
         });
@@ -236,6 +244,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
             currentYear,
             last365Days: {
                 label: 'Last 365 Days',
+                totalPlays: rollingWindowTotalPlays,
+                uniqueGames: rollingWindowCounts.size,
                 games: last365DaysGames
             },
             years: yearCards

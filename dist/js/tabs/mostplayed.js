@@ -73,6 +73,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
 
     var topCard = '<section class="rounded-lg border border-amber-700/40 bg-amber-900/10 p-4">'
         + '<h3 class="text-sm font-semibold uppercase tracking-wider text-amber-300 mb-3">' + escapeHTML(String(last365Days.label || 'Last 365 Days')) + '</h3>'
+        + '<p class="text-xs text-amber-200/80 mb-3">'
+        + escapeHTML(String(last365Days.totalPlays || 0)) + ' plays · '
+        + escapeHTML(String(last365Days.uniqueGames || 0)) + ' unique games'
+        + '</p>'
         + '<div>' + topCardListMarkup + '</div>'
         + '</section>';
 
@@ -88,6 +92,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
             + '<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">'
             + escapeHTML(String(yearEntry.year))
             + '</h3>'
+            + '<p class="text-xs text-gray-500 mb-3">'
+            + escapeHTML(String(yearEntry.totalPlays || 0)) + ' plays · '
+            + escapeHTML(String(yearEntry.uniqueGames || 0)) + ' unique games'
+            + '</p>'
             + '<div>' + yearLists + '</div>'
             + '</section>';
     }).join('');
