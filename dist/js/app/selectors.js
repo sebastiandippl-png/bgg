@@ -297,19 +297,19 @@ window.BGStatsSelectors = (function createSelectorModule() {
             groups: [
                 {
                     id: 'complex',
-                    title: 'Complex (min > 30 & max > 90)',
+                    title: 'Long, Complex & Gamers Games (min duration > 30 & max duration> 90)',
                     titleClass: 'text-blue-400',
                     games: window.sortDataUtil(complexGames, state.sort.nextplay)
                 },
                 {
                     id: 'medium',
-                    title: 'Medium (min > 30 & max > 60)',
+                    title: 'Mid-Length Games (min duration > 30 & max duration> 60)',
                     titleClass: 'text-green-400',
                     games: window.sortDataUtil(mediumGames, state.sort.nextplay)
                 },
                 {
                     id: 'light',
-                    title: 'Light (max ≤ 60)',
+                    title: 'Casual, Simple & Short Games (max duration ≤ 60)',
                     titleClass: 'text-yellow-400',
                     games: window.sortDataUtil(lightGames, state.sort.nextplay)
                 }
@@ -673,8 +673,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
             .sort((a, b) => b.wins - a.wins || b.plays - a.plays || a.name.localeCompare(b.name));
 
         const recentPlays = [...gamePlays]
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 15);
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
         return {
             game,

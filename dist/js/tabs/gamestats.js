@@ -295,7 +295,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                 + '</div>';
         }
 
-        // -- Recent plays --
+        // -- All plays --
         var recentPlaysBlock = '';
         if (recentPlays.length > 0) {
             var playRows = recentPlays.map(function (play) {
@@ -325,7 +325,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             }).join('');
 
             recentPlaysBlock = '<div class="rounded-lg border border-gray-700 p-4 md:col-span-2">'
-                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🕘 Recent Plays</h3>'
+                + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🕘 All Plays</h3>'
                 + '<div>' + playRows + '</div>'
                 + '</div>';
         }
