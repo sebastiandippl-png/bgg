@@ -422,18 +422,49 @@ window.BGStatsDashboard = (function createDashboardModule() {
         document.querySelectorAll('.tab-content').forEach(element => {
             element.classList.add('hidden');
         });
-        document.querySelectorAll('#nav-tabs button').forEach(button => {
+        document.querySelectorAll('#nav-tabs button[data-tab-id]').forEach(button => {
             button.classList.remove('tab-active', 'text-blue-400');
         });
 
+        document.querySelectorAll('#mobile-nav-menu button[data-tab-id]').forEach(button => {
+            button.classList.remove('bg-gray-700', 'text-blue-300');
+        });
+
         const content = document.getElementById(`content-${tabId}`);
-        const button = document.getElementById(`tab-${tabId}`);
-        if (!content || !button) {
+        if (!content) {
             return;
         }
 
         content.classList.remove('hidden');
-        button.classList.add('tab-active', 'text-blue-400');
+
+        const desktopButton = document.getElementById(`tab-${tabId}`);
+        if (desktopButton) {
+            desktopButton.classList.add('tab-active', 'text-blue-400');
+        }
+
+        const mobileButton = document.querySelector(`#mobile-nav-menu button[data-tab-id="${tabId}"]`);
+        if (mobileButton) {
+            mobileButton.classList.add('bg-gray-700', 'text-blue-300');
+        }
+
+        const mobileToggle = document.getElementById('mobile-nav-toggle');
+        if (mobileToggle && (desktopButton || mobileButton)) {
+            const activeLabel = desktopButton
+                ? desktopButton.textContent
+                : (mobileButton ? mobileButton.textContent : 'Menu');
+            mobileToggle.querySelector('span').textContent = activeLabel || 'Menu';
+        }
+    }
+
+    function closeMobileMenu() {
+        const mobileMenu = document.getElementById('mobile-nav-menu');
+        const mobileToggle = document.getElementById('mobile-nav-toggle');
+        if (mobileMenu) {
+            mobileMenu.classList.add('hidden');
+        }
+        if (mobileToggle) {
+            mobileToggle.setAttribute('aria-expanded', 'false');
+        }
     }
 
     function switchTab(tabId, options = {}) {
@@ -490,6 +521,22 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
                 event.preventDefault();
                 switchTab(button.dataset.tabId);
+                closeMobileMenu();
+            });
+        }
+
+        const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+        if (mobileNavToggle) {
+            mobileNavToggle.setAttribute('aria-expanded', 'false');
+            mobileNavToggle.addEventListener('click', event => {
+                event.preventDefault();
+                const mobileMenu = document.getElementById('mobile-nav-menu');
+                if (!mobileMenu) {
+                    return;
+                }
+                const isOpen = !mobileMenu.classList.contains('hidden');
+                mobileMenu.classList.toggle('hidden', isOpen);
+                mobileNavToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
             });
         }
 
