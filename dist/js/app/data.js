@@ -58,6 +58,7 @@ window.BGStatsData = (function createDataModule() {
                 Date: playDate,
                 Game: gameName,
                 Duration: row[2],
+                durationMin: row[2],
                 gameId,
                 matchedGameId,
                 playerScores,
@@ -73,6 +74,8 @@ window.BGStatsData = (function createDataModule() {
         const gameColumns = gameColumnsResult.length > 0
             ? gameColumnsResult[0].values.map(column => String(column[1]).toLowerCase())
             : [];
+        const hasRatingColumn = gameColumns.includes('rating');
+        const hasBggRatingColumn = gameColumns.includes('bgg_rating');
         const hasIsBaseGameColumn = gameColumns.includes('isbasegame');
         const hasBggLastModifiedColumn = gameColumns.includes('bgg_lastmodified');
         const hasBestWithColumn = gameColumns.includes('best_with');
@@ -80,7 +83,11 @@ window.BGStatsData = (function createDataModule() {
         const hasDesignerColumn = gameColumns.includes('designer');
 
         const result = db.exec(
-            `SELECT id, name, bggYear, minPlayerCount, maxPlayerCount, average_rating, modificationDate, bgg_rating,
+            `SELECT id, name, bggYear, minPlayerCount, maxPlayerCount,
+                ${hasRatingColumn ? 'rating' : 'NULL as rating'},
+                average_rating,
+                ${hasBggRatingColumn ? 'bgg_rating' : 'NULL as bgg_rating'},
+                modificationDate,
                 weight,
                 isExpansion,
                 ${hasIsBaseGameColumn ? 'isBaseGame' : 'NULL as isBaseGame'},
@@ -103,22 +110,23 @@ window.BGStatsData = (function createDataModule() {
                 minPlayers: parseInt(row[3], 10) || 0,
                 maxPlayers: parseInt(row[4], 10) || 0,
                 rating: row[5] ? parseFloat(row[5]).toFixed(1) : null,
-                bggRating: row[7] ? parseFloat(row[7]).toFixed(1) : null,
-                weight: row[8] ? parseFloat(row[8]).toFixed(2) : null,
-                modificationDate: row[6] || null,
-                bggLastModified: row[16] || null,
+                averageRating: row[6] ? parseFloat(row[6]).toFixed(1) : null,
+                geekRating: row[7] ? parseFloat(row[7]).toFixed(1) : null,
+                weight: row[9] ? parseFloat(row[9]).toFixed(2) : null,
+                modificationDate: row[8] || null,
+                bggLastModified: row[17] || null,
                 latestCollectionHistoryDate: null,
-                maxPlayTime: parseInt(row[12], 10) || 0,
-                minPlayTime: parseInt(row[13], 10) || 0,
-                bggId: row[14] || null,
-                isExpansion: toBoolean(row[9]),
-                isBaseGame: toBoolean(row[10]),
-                owned: toBoolean(row[15]),
+                maxPlayTime: parseInt(row[13], 10) || 0,
+                minPlayTime: parseInt(row[14], 10) || 0,
+                bggId: row[15] || null,
+                isExpansion: toBoolean(row[10]),
+                isBaseGame: toBoolean(row[11]),
+                owned: toBoolean(row[16]),
                 lastPlayed: lastPlayedByGameId[row[0]] || null,
-                urlThumb: row[11] || null,
-                bestWith: row[17] || null,
-                recommendedWith: row[18] || null,
-                designer: row[19] || null
+                urlThumb: row[12] || null,
+                bestWith: row[18] || null,
+                recommendedWith: row[19] || null,
+                designer: row[20] || null
             };
         });
     }

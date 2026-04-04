@@ -1,5 +1,40 @@
-window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
+window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
     const cards = onceUponData && Array.isArray(onceUponData.cards) ? onceUponData.cards : [];
+
+    function getPlayerKeyByName(name) {
+        const normalizedName = String(name || '').trim().toLowerCase();
+        if (!normalizedName || !Array.isArray(allPlayers)) {
+            return null;
+        }
+
+        const match = allPlayers.find(function (player) {
+            return String(player.name || '').trim().toLowerCase() === normalizedName;
+        });
+
+        return match && match.key ? String(match.key) : null;
+    }
+
+    function renderLinkedPlayerName(name, extraClass) {
+        const safeName = escapeHTML(String(name || ''));
+        const playerKey = getPlayerKeyByName(name);
+        const className = extraClass ? ` class="${extraClass}"` : '';
+
+        if (!playerKey) {
+            return `<span${className}>${safeName}</span>`;
+        }
+
+        return `<a href="#playerstats/${encodeURIComponent(playerKey)}"${className}>${safeName}</a>`;
+    }
+
+    function renderLinkedPlayerList(names, extraClass) {
+        if (!Array.isArray(names) || names.length === 0) {
+            return '';
+        }
+
+        return names.map(function (name) {
+            return renderLinkedPlayerName(name, extraClass);
+        }).join('<span class="text-gray-700">, </span>');
+    }
 
     function renderPlayCards(plays) {
         if (plays.length === 0) {
@@ -22,13 +57,13 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, escapeHTML
                 .map(score => String(score.playerName || '').trim())
                 .filter(name => name !== ''))];
 
-            const coPlayersText = uniquePlayerNames.length > 0
-                ? uniquePlayerNames.join(', ')
-                : 'No data';
+            const coPlayersMarkup = uniquePlayerNames.length > 0
+                ? renderLinkedPlayerList(uniquePlayerNames, 'text-gray-400 hover:text-gray-200 underline')
+                : '<span>No data</span>';
 
-            const winnersText = winnerNames.length > 0
-                ? winnerNames.join(', ')
-                : 'Unknown';
+            const winnersMarkup = winnerNames.length > 0
+                ? renderLinkedPlayerList(winnerNames, 'text-amber-300 hover:text-amber-200 underline')
+                : '<span>Unknown</span>';
 
             let thumbnailUrl = placeholderSvg;
             if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
@@ -40,22 +75,20 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, escapeHTML
             const statsUrl = game && game.id ? `#gamestats/${encodeURIComponent(game.id)}` : '#';
 
             cardsHTML += `
-                <a href="${statsUrl}" class="block hover:no-underline">
-                    <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 cursor-pointer h-full">
-                        <div class="w-full h-32 bg-gray-700 flex items-center justify-center">
-                            <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-lg mb-3 truncate text-gray-100 text-blue-400 hover:text-blue-300">${escapeHTML(play.Game)}</h3>
-                            <div class="text-sm text-gray-400 space-y-2">
-                                <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
-                                <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
-                                <p><span class="text-gray-500">👥 Players:</span> ${escapeHTML(coPlayersText)}</p>
-                                <p><span class="text-gray-500">🏆 Winner:</span> ${escapeHTML(winnersText)}</p>
-                            </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
+                    <div class="w-full h-32 bg-gray-700 flex items-center justify-center">
+                        <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${statsUrl}" class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a></h3>
+                        <div class="text-sm text-gray-400 space-y-2">
+                            <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
+                            <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
+                            <p><span class="text-gray-500">👥 Players:</span> ${coPlayersMarkup}</p>
+                            <p><span class="text-gray-500">🏆 Winner:</span> ${winnersMarkup}</p>
                         </div>
                     </div>
-                </a>
+                </div>
             `;
         });
 

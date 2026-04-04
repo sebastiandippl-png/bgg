@@ -14,7 +14,6 @@
         'admin-sync-metadata-btn',
         'admin-sync-plays-btn',
         'admin-sync-last-plays-btn',
-        'tab-schema',
         'admin-logout-btn'
     ];
     const AUTH_STATUS_URL = 'api/auth_status.php';

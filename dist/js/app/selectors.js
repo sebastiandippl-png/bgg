@@ -494,6 +494,14 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const playDates = gamePlays.map(p => p.Date).filter(Boolean).sort();
         const lastPlayed = playDates[playDates.length - 1] || null;
         const firstPlayed = playDates[0] || null;
+        const validDurations = gamePlays
+            .map(play => Number(play.durationMin !== undefined ? play.durationMin : play.Duration))
+            .filter(duration => Number.isFinite(duration) && duration > 0);
+        const shortestPlaytimeMin = validDurations.length > 0 ? Math.min(...validDurations) : null;
+        const longestPlaytimeMin = validDurations.length > 0 ? Math.max(...validDurations) : null;
+        const averagePlaytimeMin = validDurations.length > 0
+            ? (validDurations.reduce((sum, duration) => sum + duration, 0) / validDurations.length)
+            : null;
 
         const allScores = [];
         const winningScores = [];
@@ -559,6 +567,9 @@ window.BGStatsSelectors = (function createSelectorModule() {
             playCount,
             lastPlayed,
             firstPlayed,
+            shortestPlaytimeMin,
+            longestPlaytimeMin,
+            averagePlaytimeMin,
             avgScore,
             highScore,
             highScorePlayers,

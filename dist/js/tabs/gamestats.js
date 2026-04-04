@@ -166,11 +166,21 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         return escapeHTML(Number(val).toFixed(decimals));
     }
 
+    function fmtDurationMin(val, decimals) {
+        if (val === null || val === undefined || !Number.isFinite(Number(val))) {
+            return '<span class="text-gray-600">\u2014</span>';
+        }
+        return escapeHTML(Number(val).toFixed(decimals)) + ' min';
+    }
+
     function renderDetailView(data) {
         var game = data.game;
         var playCount = data.playCount;
         var lastPlayed = data.lastPlayed;
         var firstPlayed = data.firstPlayed;
+        var shortestPlaytimeMin = data.shortestPlaytimeMin;
+        var longestPlaytimeMin = data.longestPlaytimeMin;
+        var averagePlaytimeMin = data.averagePlaytimeMin;
         var avgScore = data.avgScore;
         var highScore = data.highScore;
         var highScorePlayers = Array.isArray(data.highScorePlayers) ? data.highScorePlayers : [];
@@ -227,7 +237,8 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         if (game.weight) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Weight</dt><dd class="text-gray-200 text-right">' + fmt(game.weight) + '</dd></div>'; }
         if (game.designer) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Designer</dt><dd class="text-gray-200 text-right text-sm">' + fmt(game.designer) + '</dd></div>'; }
         if (game.rating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Your Rating</dt><dd class="text-amber-300 text-right font-medium">' + fmt(game.rating) + '</dd></div>'; }
-        if (game.bggRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">BGG Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.bggRating) + '</dd></div>'; }
+        if (game.averageRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Average Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.averageRating) + '</dd></div>'; }
+        if (game.geekRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Geek Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.geekRating) + '</dd></div>'; }
 
         var gameInfoBlock = '<div class="rounded-lg border border-gray-700 p-4">'
             + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Game Info</h3>'
@@ -241,6 +252,9 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Total Plays</dt><dd class="text-violet-400 font-bold text-right">' + escapeHTML(String(playCount)) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Played</dt><dd class="text-gray-200 text-right">' + fmt(lastPlayed) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Played</dt><dd class="text-gray-200 text-right">' + fmt(firstPlayed) + '</dd></div>'
+            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Shortest Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(shortestPlaytimeMin, 0) + '</dd></div>'
+            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(longestPlaytimeMin, 0) + '</dd></div>'
+            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Average Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(averagePlaytimeMin, 1) + '</dd></div>'
             + '</dl>'
             + '</div>';
 

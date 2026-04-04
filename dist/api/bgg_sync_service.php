@@ -271,7 +271,7 @@ function fetch_owned_games_from_bgg(string $username): array {
                 'minPlayTime' => $minPlayTime,
                 'maxPlayTime' => $maxPlayTime,
                 'rating' => $rating,
-                'bggRating' => $bggRating,
+                'bgg_rating' => $bggRating,
                 'weight' => $weight,
                 'bgg_lastmodified' => $bggLastModified,
                 'statusOwn' => $isOwned,
@@ -291,7 +291,7 @@ function fetch_owned_games_from_bgg(string $username): array {
                 'minPlayTime' => $minPlayTime,
                 'maxPlayTime' => $maxPlayTime,
                 'rating' => $rating,
-                'bggRating' => $bggRating,
+                'bgg_rating' => $bggRating,
                 'weight' => $weight,
                 'bgg_lastmodified' => $bggLastModified,
                 'owned' => $isOwned ? 1 : 0,
@@ -889,11 +889,11 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
 function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPlays): int {
     $stmt = $db->prepare('INSERT INTO games (
         id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, recommended_with, designer, rating, average_rating, modificationDate,
-        bggRating, bgg_rating, weight, isExpansion, isBaseGame, urlThumb, maxPlayTime, minPlayTime,
+        bgg_rating, weight, isExpansion, isBaseGame, urlThumb, maxPlayTime, minPlayTime,
         bggId, owned, bgg_lastmodified, rawJson, syncedAt
     ) VALUES (
         :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :bestWith, :recommendedWith, :designer, :rating, :averageRating, :modificationDate,
-        :bggRating, :bggRatingSnake, :weight, :isExpansion, :isBaseGame, :urlThumb, :maxPlayTime, :minPlayTime,
+        :bggRatingSnake, :weight, :isExpansion, :isBaseGame, :urlThumb, :maxPlayTime, :minPlayTime,
         :bggId, :owned, :bggLastModified, :rawJson, :syncedAt
     )');
 
@@ -919,8 +919,7 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
         $averageRating = $game['average_rating'] ?? $game['rating'] ?? null;
         $stmt->bindValue(':averageRating', $averageRating, $averageRating === null ? SQLITE3_NULL : SQLITE3_FLOAT);
         $stmt->bindValue(':modificationDate', $syncedAt, SQLITE3_TEXT);
-        $stmt->bindValue(':bggRating', $game['bggRating'], $game['bggRating'] === null ? SQLITE3_NULL : SQLITE3_FLOAT);
-        $bggRatingSnake = $game['bgg_rating'] ?? $game['bggRating'] ?? null;
+        $bggRatingSnake = $game['bgg_rating'] ?? null;
         $stmt->bindValue(':bggRatingSnake', $bggRatingSnake, $bggRatingSnake === null ? SQLITE3_NULL : SQLITE3_FLOAT);
         $stmt->bindValue(':weight', $game['weight'], $game['weight'] === null ? SQLITE3_NULL : SQLITE3_FLOAT);
         $stmt->bindValue(':isExpansion', (int)$game['isExpansion'], SQLITE3_INTEGER);
@@ -1134,7 +1133,6 @@ function create_synced_bgg_database(array $games, array $plays, array $players):
             rating REAL,
             average_rating REAL,
             modificationDate TEXT,
-            bggRating REAL,
             bgg_rating REAL,
             weight REAL,
             isExpansion INTEGER DEFAULT 0,

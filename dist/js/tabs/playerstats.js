@@ -181,7 +181,6 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         + '<div class="mt-2 text-xs text-gray-400 space-y-1">'
                         + '<div class="flex justify-between gap-3"><span class="text-gray-500">High score</span><span class="text-emerald-400">' + escapeHTML(String(entry.score)) + '</span></div>'
                         + '<div class="flex justify-between gap-3"><span class="text-gray-500">Last achieved</span><span>' + fmt(entry.lastAchievedOn) + '</span></div>'
-                        + '<div class="flex justify-between gap-3"><span class="text-gray-500">Times matched</span><span>' + escapeHTML(String(entry.timesMatched)) + '</span></div>'
                         + '</div>'
                         + '</div>';
                 }).join('') + '</div>'

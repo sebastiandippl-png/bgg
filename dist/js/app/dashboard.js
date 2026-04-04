@@ -9,7 +9,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'playerstats', 'schema']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'nextplay', 'gamestats', 'playerstats']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -333,29 +333,13 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return null;
     }
 
-    function renderSchema() {
-        if (typeof window.renderSchemaTab !== 'function') {
-            const container = document.getElementById('content-schema');
-            if (container) {
-                container.innerHTML = '<div class="text-red-400">Schema renderer not loaded.</div>';
-            }
-            return;
-        }
-
-        const schemaData = window.BGStatsSelectors.getBggSchemaViewModel(db);
-        window.renderSchemaTab({
-            schemaData,
-            escapeHTML,
-            containerId: 'content-schema'
-        });
-    }
-
     function renderTab(tabId) {
         const state = store.getState();
 
         if (tabId === 'insights' && typeof window.renderInsightsTab === 'function') {
             window.renderInsightsTab({
                 insightsData: window.BGStatsSelectors.getInsightsViewModel(state),
+                allPlayers: state.players,
                 escapeHTML,
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
@@ -367,6 +351,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         if (tabId === 'plays' && typeof window.renderPlaysTab === 'function') {
             window.renderPlaysTab({
                 playsData: window.BGStatsSelectors.getRecentPlaysViewModel(state),
+                allPlayers: state.players,
                 escapeHTML,
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
@@ -378,6 +363,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         if (tabId === 'onceupon' && typeof window.renderOnceUponTab === 'function') {
             window.renderOnceUponTab({
                 onceUponData: window.BGStatsSelectors.getOnceUponViewModel(state),
+                allPlayers: state.players,
                 escapeHTML,
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
@@ -454,18 +440,6 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
         activeTabId = tabId;
         setActiveTabStyles(tabId);
-
-        if (tabId === 'schema') {
-            if (!window.__bgstatsAdmin) {
-                tabId = 'insights';
-                activeTabId = tabId;
-                setActiveTabStyles(tabId);
-                renderTab(tabId);
-                return;
-            }
-            renderSchema();
-            return;
-        }
 
         renderTab(tabId);
     }
@@ -747,7 +721,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
                     const reloadedDbFromStatus = await loadDatabaseFromServer();
                     if (reloadedDbFromStatus) {
                         hydrateDatabase(reloadedDbFromStatus);
-                        switchTab('schema');
+                            switchTab('insights');
                     }
                 }
 
@@ -765,7 +739,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
                         const reloadedDbFromTerminalStatus = await loadDatabaseFromServer();
                         if (reloadedDbFromTerminalStatus) {
                             hydrateDatabase(reloadedDbFromTerminalStatus);
-                            switchTab('schema');
+                            switchTab('insights');
                         }
                     }
 
@@ -787,7 +761,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 const reloadedDb = await loadDatabaseFromServer();
                 if (reloadedDb) {
                     hydrateDatabase(reloadedDb);
-                    switchTab('schema');
+                    switchTab('insights');
                 }
             }
 

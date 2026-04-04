@@ -1,4 +1,4 @@
-window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'content-insights' }) {
+window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'content-insights' }) {
     const {
         hIndex,
         totalPlays,
@@ -11,6 +11,31 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML
         anneVsSeb
     } = insightsData;
     const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+
+    function getPlayerKeyByName(name) {
+        const normalizedName = String(name || '').trim().toLowerCase();
+        if (!normalizedName || !Array.isArray(allPlayers)) {
+            return null;
+        }
+
+        const match = allPlayers.find(function (player) {
+            return String(player.name || '').trim().toLowerCase() === normalizedName;
+        });
+
+        return match && match.key ? String(match.key) : null;
+    }
+
+    function renderLinkedPlayerName(name, extraClass) {
+        const safeName = escapeHTML(String(name || ''));
+        const playerKey = getPlayerKeyByName(name);
+        const className = extraClass ? ` class="${extraClass}"` : '';
+
+        if (!playerKey) {
+            return `<span${className}>${safeName}</span>`;
+        }
+
+        return `<a href="#playerstats/${encodeURIComponent(playerKey)}"${className}>${safeName}</a>`;
+    }
 
     const hIndexNearMissMarkup = hIndex > 0 && nearMissGames.length > 0
         ? `<p class="text-xs text-gray-500 mt-3">Closest below your h-index: ${escapeHTML(nearMissGames.map(game => `${game.name} (${game.playCount})`).join(', '))}</p>`
@@ -62,8 +87,8 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, escapeHTML
             <p class="text-4xl font-bold text-cyan-400">${escapeHTML(anneVsSeb.playsCount)}</p>
             <p class="text-xs text-gray-500 mt-1 mb-4">Number of plays</p>
             <div class="space-y-1 text-sm">
-                <p>Anne Wins: <span class="${anneWinsHighlight}">${escapeHTML(anneVsSeb.anneWins)}</span></p>
-                <p>Sebastian Wins: <span class="${sebWinsHighlight}">${escapeHTML(anneVsSeb.sebastianWins)}</span></p>
+                <p>${renderLinkedPlayerName('Anne', 'text-gray-200 hover:text-blue-300 underline')} Wins: <span class="${anneWinsHighlight}">${escapeHTML(anneVsSeb.anneWins)}</span></p>
+                <p>${renderLinkedPlayerName('Sebastian', 'text-gray-200 hover:text-blue-300 underline')} Wins: <span class="${sebWinsHighlight}">${escapeHTML(anneVsSeb.sebastianWins)}</span></p>
                 <p class="mt-2">Winner: <span class="${anneVsSebLeaderClass}">${escapeHTML(anneVsSeb.leaderLabel || 'Currently tied')}</span></p>
             </div>
         </div>`;
