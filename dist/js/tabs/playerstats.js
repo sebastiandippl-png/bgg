@@ -98,10 +98,17 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
         return escapeHTML(String(val));
     }
 
-    function gameLink(game, fallbackName) {
+    function gameLink(game, fallbackName, fallbackGameId) {
         var label = fallbackName || (game && game.name) || 'Unknown Game';
         if (game && game.id) {
             return '<a href="#gamestats/' + encodeURIComponent(game.id) + '" class="text-blue-400 hover:text-blue-300 underline">' + escapeHTML(String(label)) + '</a>';
+        }
+        var bggId = fallbackGameId !== null && fallbackGameId !== undefined && String(fallbackGameId).trim() !== ''
+            ? String(fallbackGameId).trim().replace(/^bgg_/i, '')
+            : null;
+        if (bggId) {
+            return '<a href="https://boardgamegeek.com/boardgame/' + encodeURIComponent(bggId) + '/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">' + escapeHTML(String(label)) + '</a>'
+                + '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>';
         }
         return '<span class="text-gray-200">' + escapeHTML(String(label)) + '</span>';
     }
@@ -142,21 +149,21 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
         var firstPlayMarkup = firstPlay
             ? '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Play</dt><dd class="text-right">'
                 + '<div class="text-gray-200">' + fmt(firstPlay.Date) + '</div>'
-                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(firstPlay.game, firstPlay.Game) + '</div>'
+                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(firstPlay.game, firstPlay.Game, firstPlay.gameId) + '</div>'
                 + '</dd></div>'
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
 
         var lastPlayMarkup = lastPlay
             ? '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Play</dt><dd class="text-right">'
                 + '<div class="text-gray-200">' + fmt(lastPlay.Date) + '</div>'
-                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(lastPlay.game, lastPlay.Game) + '</div>'
+                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(lastPlay.game, lastPlay.Game, lastPlay.gameId) + '</div>'
                 + '</dd></div>'
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
 
         var longestPlayMarkup = longestPlay
             ? '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Play</dt><dd class="text-right">'
                 + '<div class="text-gray-200">' + escapeHTML(String(longestPlay.durationMin)) + ' min</div>'
-                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(longestPlay.game, longestPlay.gameName) + '</div>'
+                + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(longestPlay.game, longestPlay.gameName, longestPlay.gameId) + '</div>'
                 + '</dd></div>'
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
 
@@ -177,7 +184,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                 ? '<div class="space-y-2">' + mostPlayedGames.map(function (entry, index) {
                     return '<div class="flex items-center gap-3 text-sm">'
                         + '<span class="text-xs text-gray-600 w-5 text-right shrink-0">' + (index + 1) + '.</span>'
-                        + '<span class="flex-1 min-w-0 truncate">' + gameLink(entry.game, entry.gameName) + '</span>'
+                        + '<span class="flex-1 min-w-0 truncate">' + gameLink(entry.game, entry.gameName, entry.gameId) + '</span>'
                         + '<span class="text-fuchsia-300 text-xs shrink-0">' + escapeHTML(String(entry.plays)) + ' plays</span>'
                         + '</div>';
                 }).join('') + '</div>'
@@ -190,7 +197,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                 ? '<div class="space-y-2">' + mostWonGames.map(function (entry, index) {
                     return '<div class="flex items-center gap-3 text-sm">'
                         + '<span class="text-xs text-gray-600 w-5 text-right shrink-0">' + (index + 1) + '.</span>'
-                        + '<span class="flex-1 min-w-0 truncate">' + gameLink(entry.game, entry.gameName) + '</span>'
+                        + '<span class="flex-1 min-w-0 truncate">' + gameLink(entry.game, entry.gameName, entry.gameId) + '</span>'
                         + '<span class="text-amber-400 text-xs shrink-0">' + entry.wins + ' win' + (entry.wins !== 1 ? 's' : '') + ' 🏆</span>'
                         + '</div>';
                 }).join('') + '</div>'
@@ -202,7 +209,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             + (recordHighGames.length > 0
                 ? '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">' + recordHighGames.map(function (entry) {
                     return '<div class="rounded-lg border border-gray-700/60 bg-gray-900/40 p-3">'
-                        + '<div class="text-sm font-medium">' + gameLink(entry.game, entry.gameName) + '</div>'
+                        + '<div class="text-sm font-medium">' + gameLink(entry.game, entry.gameName, entry.gameId) + '</div>'
                         + '<div class="mt-2 text-xs text-gray-400 space-y-1">'
                         + '<div class="flex justify-between gap-3"><span class="text-gray-500">High score</span><span class="text-emerald-400">' + escapeHTML(String(entry.score)) + '</span></div>'
                         + '<div class="flex justify-between gap-3"><span class="text-gray-500">Last achieved</span><span>' + fmt(entry.lastAchievedOn) + '</span></div>'
@@ -221,7 +228,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         : null;
                     return '<div class="flex items-start gap-3 py-2 border-b border-gray-700/40 last:border-0 text-sm">'
                         + '<span class="text-gray-500 shrink-0 w-24 tabular-nums">' + fmt(play.Date) + '</span>'
-                        + '<span class="flex-1 min-w-0">' + gameLink(play.game, play.Game) + '</span>'
+                        + '<span class="flex-1 min-w-0">' + gameLink(play.game, play.Game, play.gameId) + '</span>'
                         + '<span class="text-gray-400 shrink-0">' + (scoreValue ? 'Score ' + escapeHTML(scoreValue) : 'No score') + '</span>'
                         + '<span class="' + (play.isWin ? 'text-amber-400' : 'text-gray-600') + ' shrink-0">' + (play.isWin ? '🏆 Win' : '') + '</span>'
                         + '</div>';

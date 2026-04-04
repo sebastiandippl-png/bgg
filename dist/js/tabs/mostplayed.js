@@ -37,9 +37,14 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
 
     function renderGameRow(game, rank) {
         var gameName = escapeHTML(String(game.gameName || 'Unknown Game'));
-        var gameLink = game.gameId
-            ? '<a href="#gamestats/' + encodeURIComponent(String(game.gameId)) + '" class="text-gray-100 hover:text-blue-300 underline">' + gameName + '</a>'
-            : '<span class="text-gray-100">' + gameName + '</span>';
+        var hasLocalGame = game && game.hasLocalGame === true;
+        var gameId = game && game.gameId ? String(game.gameId).replace(/^bgg_/i, '') : '';
+        var externalBadge = '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>';
+        var gameLink = hasLocalGame && gameId
+            ? '<a href="#gamestats/' + encodeURIComponent(gameId) + '" class="text-gray-100 hover:text-blue-300 underline">' + gameName + '</a>'
+            : (gameId
+                ? '<a href="https://boardgamegeek.com/boardgame/' + encodeURIComponent(gameId) + '/" target="_blank" rel="noopener noreferrer" class="text-gray-100 hover:text-blue-300 underline">' + gameName + '</a>' + externalBadge
+                : '<span class="text-gray-100">' + gameName + '</span>');
         var winnerBadge = rank === 1
             ? '<span class="ml-2 text-amber-300" aria-label="winner">🏆</span>'
             : '';

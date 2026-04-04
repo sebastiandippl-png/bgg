@@ -36,6 +36,32 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
         }).join('<span class="text-gray-700">, </span>');
     }
 
+    function getGameLinkParts(play) {
+        var game = play && play.game;
+        if (game && game.id) {
+            return {
+                href: '#gamestats/' + encodeURIComponent(String(game.id)),
+                attrs: '',
+                isExternal: false
+            };
+        }
+
+        var bggId = play && play.gameId ? String(play.gameId).trim().replace(/^bgg_/i, '') : '';
+        if (bggId) {
+            return {
+                href: 'https://boardgamegeek.com/boardgame/' + encodeURIComponent(bggId) + '/',
+                attrs: ' target="_blank" rel="noopener noreferrer"',
+                isExternal: true
+            };
+        }
+
+        return {
+            href: '#',
+            attrs: '',
+            isExternal: false
+        };
+    }
+
     function renderPlayCards(plays) {
         if (plays.length === 0) {
             return '<div class="p-4 text-gray-500 italic">🗂️ No plays recorded on this date.</div>';
@@ -72,7 +98,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
             const safeThumbnailUrl = escapeHTML(thumbnailUrl);
             const safePlaceholderUrl = escapeHTML(placeholderSvg);
 
-            const statsUrl = game && game.id ? `#gamestats/${encodeURIComponent(game.id)}` : '#';
+            const gameLink = getGameLinkParts(play);
 
             cardsHTML += `
                 <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
@@ -80,7 +106,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
                         <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
                     </div>
                     <div class="p-4">
-                        <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${statsUrl}" class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a></h3>
+                        <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${gameLink.href}"${gameLink.attrs} class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a>${gameLink.isExternal ? '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>' : ''}</h3>
                         <div class="text-sm text-gray-400 space-y-2">
                             <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
                             <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>

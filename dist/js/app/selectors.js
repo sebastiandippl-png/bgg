@@ -229,6 +229,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
                     gameId: gameId || null,
                     gameName: matchedGameForOverall && matchedGameForOverall.name ? matchedGameForOverall.name : fallbackName,
                     weight: matchedGameForOverall && Number.isFinite(Number(matchedGameForOverall.weight)) ? Number(matchedGameForOverall.weight) : null,
+                    hasLocalGame: !!matchedGameForOverall,
                     playCount: 0
                 });
             }
@@ -239,6 +240,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
                     gameId: gameId || null,
                     gameName: matchedGame && matchedGame.name ? matchedGame.name : fallbackName,
                     weight: matchedGame && Number.isFinite(Number(matchedGame.weight)) ? Number(matchedGame.weight) : null,
+                    hasLocalGame: !!matchedGame,
                     playCount: 0
                 });
             }
@@ -257,6 +259,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
                         gameId: gameId || null,
                         gameName: matchedGameForWindow && matchedGameForWindow.name ? matchedGameForWindow.name : fallbackName,
                         weight: matchedGameForWindow && Number.isFinite(Number(matchedGameForWindow.weight)) ? Number(matchedGameForWindow.weight) : null,
+                        hasLocalGame: !!matchedGameForWindow,
                         playCount: 0
                     });
                 }

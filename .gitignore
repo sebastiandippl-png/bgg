@@ -22,3 +22,4 @@ venv/
 .DS_Store
 
 tools/bgg-play-rename
+tools/bgg_dump/
