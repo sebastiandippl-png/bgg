@@ -168,8 +168,10 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const gamesById = new Map(state.games.map(game => [String(game.id), game]));
         const yearlyBuckets = new Map();
         const yearlyTotalPlays = new Map();
+        const overallCounts = new Map();
         const rollingWindowCounts = new Map();
         let rollingWindowTotalPlays = 0;
+        let overallTotalPlays = 0;
 
         state.plays.forEach(play => {
             const playDate = play.Date ? new Date(play.Date) : null;
@@ -187,6 +189,16 @@ window.BGStatsSelectors = (function createSelectorModule() {
             const gameId = String(play.gameId || '').trim();
             const fallbackName = String(play.Game || 'Unknown Game').trim() || 'Unknown Game';
             const key = gameId ? `id:${gameId}` : `name:${fallbackName.toLowerCase()}`;
+            const matchedGameForOverall = gameId ? gamesById.get(gameId) : null;
+
+            if (!overallCounts.has(key)) {
+                overallCounts.set(key, {
+                    gameId: gameId || null,
+                    gameName: matchedGameForOverall && matchedGameForOverall.name ? matchedGameForOverall.name : fallbackName,
+                    weight: matchedGameForOverall && Number.isFinite(Number(matchedGameForOverall.weight)) ? Number(matchedGameForOverall.weight) : null,
+                    playCount: 0
+                });
+            }
 
             if (!yearlyCounts.has(key)) {
                 const matchedGame = gameId ? gamesById.get(gameId) : null;
@@ -200,6 +212,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
             const row = yearlyCounts.get(key);
             row.playCount += 1;
+            overallCounts.get(key).playCount += 1;
+            overallTotalPlays += 1;
             yearlyTotalPlays.set(year, (yearlyTotalPlays.get(year) || 0) + 1);
 
             if (playDate >= last365Cutoff && playDate <= now) {
@@ -239,6 +253,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         const last365DaysGames = [...rollingWindowCounts.values()]
             .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+        const overallGames = [...overallCounts.values()]
+            .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
 
         return {
             currentYear,
@@ -247,6 +263,12 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 totalPlays: rollingWindowTotalPlays,
                 uniqueGames: rollingWindowCounts.size,
                 games: last365DaysGames
+            },
+            overall: {
+                label: 'Overall',
+                totalPlays: overallTotalPlays,
+                uniqueGames: overallCounts.size,
+                games: overallGames
             },
             years: yearCards
         };

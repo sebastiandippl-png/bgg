@@ -1,5 +1,5 @@
 window.renderMostPlayedTab = function renderMostPlayedTab(options) {
-    var mostPlayedData = options.mostPlayedData || { years: [], last365Days: { games: [] } };
+    var mostPlayedData = options.mostPlayedData || { years: [], last365Days: { games: [] }, overall: { games: [] } };
     var escapeHTML = options.escapeHTML;
     var targetId = options.targetId || 'mostplayed-content';
 
@@ -9,8 +9,10 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
     var years = Array.isArray(mostPlayedData.years) ? mostPlayedData.years : [];
     var last365Days = mostPlayedData.last365Days || { label: 'Last 365 Days', games: [] };
     var last365Rows = Array.isArray(last365Days.games) ? last365Days.games : [];
+    var overall = mostPlayedData.overall || { label: 'Overall', games: [] };
+    var overallRows = Array.isArray(overall.games) ? overall.games : [];
 
-    if (years.length === 0 && last365Rows.length === 0) {
+    if (years.length === 0 && last365Rows.length === 0 && overallRows.length === 0) {
         container.innerHTML = '<div class="text-sm text-gray-400">No play data available.</div>';
         return;
     }
@@ -80,6 +82,21 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + '<div>' + topCardListMarkup + '</div>'
         + '</section>';
 
+    var overallSplit = splitByWeight(overallRows);
+    var overallCardListMarkup = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
+        + renderListBlock('Weight <= 2', overallSplit.underOrEqual, { maxEntries: 10 })
+        + renderListBlock('Weight > 2', overallSplit.over, { maxEntries: 10 })
+        + '</div>';
+
+    var overallCard = '<section class="rounded-lg border border-gray-700 bg-gray-900/30 p-4">'
+        + '<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">' + escapeHTML(String(overall.label || 'Overall')) + '</h3>'
+        + '<p class="text-xs text-gray-500 mb-3">'
+        + escapeHTML(String(overall.totalPlays || 0)) + ' plays · '
+        + escapeHTML(String(overall.uniqueGames || 0)) + ' unique games'
+        + '</p>'
+        + '<div>' + overallCardListMarkup + '</div>'
+        + '</section>';
+
     var cards = years.map(function (yearEntry) {
         var rows = Array.isArray(yearEntry.games) ? yearEntry.games : [];
         var split = splitByWeight(rows);
@@ -100,5 +117,5 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
             + '</section>';
     }).join('');
 
-    container.innerHTML = '<div class="space-y-4">' + topCard + cards + '</div>';
+    container.innerHTML = '<div class="space-y-4">' + topCard + overallCard + cards + '</div>';
 };
