@@ -582,37 +582,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
             handleSort(sortTrigger.dataset.sortTab, sortTrigger.dataset.sortCol);
         });
 
-        const syncGamesButton = document.getElementById('admin-sync-games-btn');
-        if (syncGamesButton) {
-            syncGamesButton.addEventListener('click', event => {
-                event.preventDefault();
-                syncBggGames();
-            });
-        }
-
-        const syncMetadataButton = document.getElementById('admin-sync-metadata-btn');
-        if (syncMetadataButton) {
-            syncMetadataButton.addEventListener('click', event => {
-                event.preventDefault();
-                syncBggMetadata();
-            });
-        }
-
-        const syncPlaysButton = document.getElementById('admin-sync-plays-btn');
-        if (syncPlaysButton) {
-            syncPlaysButton.addEventListener('click', event => {
-                event.preventDefault();
-                syncBggPlays();
-            });
-        }
-
-        const syncLastPlaysButton = document.getElementById('admin-sync-last-plays-btn');
-        if (syncLastPlaysButton) {
-            syncLastPlaysButton.addEventListener('click', event => {
-                event.preventDefault();
-                syncBggLastPlays();
-            });
-        }
+        // Admin sync button events moved to js/tabs/admin.js
 
         document.addEventListener('error', handleImageError, true);
     }
@@ -934,6 +904,10 @@ window.BGStatsDashboard = (function createDashboardModule() {
         switchTab,
         handleSort,
         getState: store.getState,
-        hydrateDatabase
+        hydrateDatabase,
+        syncBggGames,
+        syncBggMetadata,
+        syncBggPlays,
+        syncBggLastPlays
     };
 })();
