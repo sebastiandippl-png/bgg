@@ -10,21 +10,6 @@ Behavior:
 - `GET` returns the SQLite binary.
 - Direct browser access is blocked; requests must include `X-Requested-With: XMLHttpRequest`.
 
-### POST /api/sync_bgg.php
-Admin-only sync endpoint that fetches collection and plays data for user `sebbes` and rebuilds `bgg.db`.
-
-Example success response:
-```json
-{
-  "success": true,
-  "username": "sebbes",
-  "insertedGames": 123,
-  "insertedPlays": 456,
-  "backupCreated": true,
-  "syncedAt": "2026-04-01T10:00:00Z"
-}
-```
-
 ### POST /api/sync_bgg_new_games.php
 Admin-only incremental endpoint.
 
