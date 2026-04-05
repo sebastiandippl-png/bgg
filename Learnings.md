@@ -123,6 +123,25 @@ CREATE TABLE games (
 - Backend storage: Returns array with `"owned"` key per game
 - Frontend query: `dist/js/app/data.js` → `loadPlays()` uses LEFT JOIN + rawJson fallback
 
+### Collection Status Flags Should Be Mirrored Into SQLite
+
+**Requirement**: Persist BGG collection status attributes, not just `own`.
+
+**Stored Columns**:
+- `owned`
+- `prev_owned`
+- `for_trade`
+- `want`
+- `want_to_play`
+- `want_to_buy`
+- `wishlist`
+- `preordered`
+- `bgg_lastmodified`
+
+**Why**: Delta collection sync must be able to detect status flips on existing games and overwrite the stored flags without rebuilding the database.
+
+**Code Location**: `dist/api/bgg_sync_service.php` → collection parsing, schema creation, and `append_new_games_to_existing_database()`
+
 ---
 
 ### XML Parsing Gotchas

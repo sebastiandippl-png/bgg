@@ -321,9 +321,25 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
 
         // -- Header --
         var tags = '';
+        var collectionStatusBadges = [
+            { active: game.owned, label: 'owned', className: 'bg-emerald-900/50 text-emerald-400' },
+            { active: game.prevOwned, label: 'prevOwned', className: 'bg-rose-900/50 text-rose-300' },
+            { active: game.forTrade, label: 'forTrade', className: 'bg-sky-900/50 text-sky-300' },
+            { active: game.want, label: 'want', className: 'bg-violet-900/50 text-violet-300' },
+            { active: game.wantToPlay, label: 'wantToPlay', className: 'bg-cyan-900/50 text-cyan-300' },
+            { active: game.wantToBuy, label: 'wantToBuy', className: 'bg-amber-900/50 text-amber-300' },
+            { active: game.wishlist, label: 'wishlist', className: 'bg-fuchsia-900/50 text-fuchsia-300' },
+            { active: game.preordered, label: 'preordered', className: 'bg-indigo-900/50 text-indigo-300' }
+        ];
         if (game.year) { tags += '<span class="text-xs text-gray-500">' + escapeHTML(String(game.year)) + '</span>'; }
         if (game.isExpansion) { tags += '<span class="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded ml-2">Expansion</span>'; }
-        if (game.owned) { tags += '<span class="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded ml-2">Owned</span>'; }
+        collectionStatusBadges.forEach(function (badge) {
+            if (!badge.active) {
+                return;
+            }
+
+            tags += '<span class="text-xs px-2 py-0.5 rounded ml-2 ' + badge.className + '">' + escapeHTML(badge.label) + '</span>';
+        });
 
         var header = '<div class="flex items-start gap-4 mb-6">'
             + '<div class="shrink-0 w-20 h-20 bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center">'

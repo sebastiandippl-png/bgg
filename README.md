@@ -19,7 +19,7 @@ This is just a toy project to learn different things for me. Hence there are ton
 4. The backend fetches data for the BGG user configured via `BGSTATS_BGG_USERNAME` (env var or `local_config.php`) and publishes a rebuilt `dist/bgg.db`.
 
 For incremental updates after a full sync, use the Delta Sync card:
-- `Get New Games`: fetches current owned collection, inserts missing games, updates changed ownership flags on existing games, and removes games that are no longer in the collection (no DB rebuild)
+- `Get New Games`: fetches the current BGG collection, inserts missing games, overwrites changed collection status flags on existing games, and removes games that are no longer in the collection (no DB rebuild)
 - `Game Metadata Delta Sync`: fills missing metadata for games in the existing DB
 - `Get Last Plays`: appends only recent plays not already stored
 
@@ -27,6 +27,8 @@ For incremental updates after a full sync, use the Delta Sync card:
 
 The application no longer supports BGStats JSON upload/import.
 All dashboard data comes from BGG sync endpoints.
+
+Collection sync stores BGG status flags per game in SQLite: `owned`, `prev_owned`, `for_trade`, `want`, `want_to_play`, `want_to_buy`, `wishlist`, `preordered`, and `bgg_lastmodified`.
 
 Thing metadata sync also stores `games.best_with` using `poll-summary` values (for example: `Best with 3 players, Recommended with 2–4 players`).
 
@@ -46,7 +48,7 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 - `dist/api/sync_bgg_games.php`: stage 1 — fetch collection from BGG
 - `dist/api/sync_bgg_metadata.php`: stage 2 — enrich games with thing metadata
 - `dist/api/sync_bgg_plays.php`: stage 3 — fetch all plays and rebuild `bgg.db`
-- `dist/api/sync_bgg_new_games.php`: delta stage — append new owned games into existing `bgg.db`
+- `dist/api/sync_bgg_new_games.php`: delta stage — append missing games and reconcile collection status inside existing `bgg.db`
 - `dist/api/sync_bgg_status.php`: sync progress endpoint
 - `dist/api/bgg_sync_service.php`: fetch + transform + SQLite rebuild
 - `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)

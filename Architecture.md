@@ -29,7 +29,7 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 1. `sync_bgg_games.php` — Fetch full collection only (~30s)
 2. `sync_bgg_metadata.php` — Enrich games with details (~2-3 min, batched)
 3. `sync_bgg_plays.php` — Fetch all plays + build final DB (~5-10 min, paginated)
-4. `sync_bgg_new_games.php` — Fetch owned collection and append only games not yet present (no DB rebuild)
+4. `sync_bgg_new_games.php` — Fetch collection, append only games not yet present, and reconcile collection status flags (no DB rebuild)
 5. `sync_bgg_last_plays.php` — Fetch only last-week plays and append only missing rows (no DB rebuild)
 
 **Each stage:**
@@ -44,9 +44,11 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 - Keeps existing `bgg.db` and all existing rows intact (no delete/recreate)
 
 **Incremental stage behavior (`sync_bgg_new_games.php`):**
-- Requests the full owned collection using the same fetch path as `sync_bgg_games.php`
+- Requests the full collection using the same fetch path as `sync_bgg_games.php`
 - Compares fetched `bggId` values with `games.bggId` already in `bgg.db`
-- Inserts only missing games into `games` and removes games no longer present in the fetched collection (no delete/recreate)
+- Inserts only missing games into `games`
+- Updates collection status columns from BGG when existing rows changed
+- Removes games no longer present in the fetched collection (no delete/recreate)
 
 ### Database Publishing Pattern
 
@@ -147,6 +149,13 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 | id | TEXT PRIMARY | Internal ID (`bgg_<bggId>`) |
 | bggId | INTEGER | BGG numeric ID |
 | owned | INTEGER | 0 = wishlist/trade, 1 = in collection |
+| prev_owned | INTEGER | 1 if previously owned on BGG |
+| for_trade | INTEGER | 1 if marked for trade on BGG |
+| want | INTEGER | 1 if marked want on BGG |
+| want_to_play | INTEGER | 1 if marked want to play on BGG |
+| want_to_buy | INTEGER | 1 if marked want to buy on BGG |
+| wishlist | INTEGER | 1 if marked wishlist on BGG |
+| preordered | INTEGER | 1 if marked preordered on BGG |
 | name | TEXT | Game title |
 | isExpansion | INTEGER | 1 if expansion, 0 if base game |
 | isBaseGame | INTEGER | 1 if base game, 0 if expansion |
@@ -163,7 +172,7 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 | minPlayTime | INTEGER | Min playtime (minutes) |
 | maxPlayTime | INTEGER | Max playtime (minutes) |
 | urlThumb | TEXT | Thumbnail image URL |
-| bgg_lastmodified | TEXT | Date item was last modified in user's BGG collection |
+| bgg_lastmodified | TEXT | `status.lastmodified` from the BGG collection feed |
 | syncedAt | TEXT | ISO timestamp of last sync |
 | rawJson | TEXT | Full raw payload from BGG collection/thing API |
 

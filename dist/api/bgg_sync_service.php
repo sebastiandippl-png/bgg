@@ -52,6 +52,111 @@ function sanitize_bgg_username(string $username): string {
     return $username;
 }
 
+/**
+ * @return array<string, int|string|null>
+ */
+function get_collection_status_defaults(): array {
+    return [
+        'owned' => 0,
+        'prev_owned' => 0,
+        'for_trade' => 0,
+        'want' => 0,
+        'want_to_play' => 0,
+        'want_to_buy' => 0,
+        'wishlist' => 0,
+        'preordered' => 0,
+        'bgg_lastmodified' => null,
+    ];
+}
+
+/**
+ * @return array<string, string>
+ */
+function get_collection_status_column_definitions(): array {
+    return [
+        'owned' => 'INTEGER DEFAULT 0',
+        'prev_owned' => 'INTEGER DEFAULT 0',
+        'for_trade' => 'INTEGER DEFAULT 0',
+        'want' => 'INTEGER DEFAULT 0',
+        'want_to_play' => 'INTEGER DEFAULT 0',
+        'want_to_buy' => 'INTEGER DEFAULT 0',
+        'wishlist' => 'INTEGER DEFAULT 0',
+        'preordered' => 'INTEGER DEFAULT 0',
+        'bgg_lastmodified' => 'TEXT',
+    ];
+}
+
+/**
+ * @return array<string, string>
+ */
+function get_collection_status_xml_attribute_map(): array {
+    return [
+        'owned' => 'own',
+        'prev_owned' => 'prevowned',
+        'for_trade' => 'fortrade',
+        'want' => 'want',
+        'want_to_play' => 'wanttoplay',
+        'want_to_buy' => 'wanttobuy',
+        'wishlist' => 'wishlist',
+        'preordered' => 'preordered',
+        'bgg_lastmodified' => 'lastmodified',
+    ];
+}
+
+/**
+ * @return array<string, bool>
+ */
+function get_games_table_columns(SQLite3 $db): array {
+    $result = $db->query('PRAGMA table_info("games")');
+    if ($result === false) {
+        throw new RuntimeException('games_table_info_failed');
+    }
+
+    $columns = [];
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $name = strtolower(trim((string)($row['name'] ?? '')));
+        if ($name !== '') {
+            $columns[$name] = true;
+        }
+    }
+
+    return $columns;
+}
+
+function ensure_games_status_columns(SQLite3 $db): void {
+    $existingColumns = get_games_table_columns($db);
+
+    foreach (get_collection_status_column_definitions() as $column => $definition) {
+        if (isset($existingColumns[strtolower($column)])) {
+            continue;
+        }
+
+        if ($db->exec('ALTER TABLE games ADD COLUMN ' . $column . ' ' . $definition) === false) {
+            throw new RuntimeException('games_add_column_' . $column . '_failed');
+        }
+    }
+}
+
+/**
+ * @return array<string, int|string|null>
+ */
+function extract_collection_status_from_item(SimpleXMLElement $item): array {
+    $statusNode = $item->status ?? null;
+    $statusValues = get_collection_status_defaults();
+
+    foreach (get_collection_status_xml_attribute_map() as $column => $attribute) {
+        $rawValue = trim((string)($statusNode[$attribute] ?? ''));
+        if ($column === 'bgg_lastmodified') {
+            $statusValues[$column] = $rawValue !== '' ? $rawValue : null;
+            continue;
+        }
+
+        $statusValues[$column] = $rawValue === '1' ? 1 : 0;
+    }
+
+    return $statusValues;
+}
+
 function get_bgg_sync_cache_dir(): string {
     $dir = __DIR__ . '/../db_storage/sync_cache';
     if (!is_dir($dir)) {
@@ -221,8 +326,8 @@ function fetch_owned_games_from_bgg(string $username): array {
     $gamesByBggId = [];
     foreach ([$baseXml, $expansionXml] as $xml) {
         foreach ($xml->item as $item) {
-            $statusOwn = (string)($item->status['own'] ?? '0');
-            $isOwned = $statusOwn === '1';
+            $collectionStatus = extract_collection_status_from_item($item);
+            $isOwned = (int)$collectionStatus['owned'] === 1;
 
             $bggId = (int)($item['objectid'] ?? 0);
             if ($bggId <= 0) {
@@ -255,8 +360,7 @@ function fetch_owned_games_from_bgg(string $username): array {
             $bggRating = is_numeric($bggRatingValue) ? (float)$bggRatingValue : null;
             $weightValue = (string)($item->stats->rating->averageweight['value'] ?? '');
             $weight = is_numeric($weightValue) ? (float)$weightValue : null;
-            $lastModifiedRaw = trim((string)($item->status['lastmodified'] ?? ''));
-            $bggLastModified = $lastModifiedRaw !== '' ? $lastModifiedRaw : null;
+            $bggLastModified = $collectionStatus['bgg_lastmodified'];
 
             $raw = [
                 'bggId' => $bggId,
@@ -274,7 +378,14 @@ function fetch_owned_games_from_bgg(string $username): array {
                 'bgg_rating' => $bggRating,
                 'weight' => $weight,
                 'bgg_lastmodified' => $bggLastModified,
-                'statusOwn' => $isOwned,
+                'owned' => (int)$collectionStatus['owned'],
+                'prev_owned' => (int)$collectionStatus['prev_owned'],
+                'for_trade' => (int)$collectionStatus['for_trade'],
+                'want' => (int)$collectionStatus['want'],
+                'want_to_play' => (int)$collectionStatus['want_to_play'],
+                'want_to_buy' => (int)$collectionStatus['want_to_buy'],
+                'wishlist' => (int)$collectionStatus['wishlist'],
+                'preordered' => (int)$collectionStatus['preordered'],
                 'username' => $username,
             ];
 
@@ -294,7 +405,14 @@ function fetch_owned_games_from_bgg(string $username): array {
                 'bgg_rating' => $bggRating,
                 'weight' => $weight,
                 'bgg_lastmodified' => $bggLastModified,
-                'owned' => $isOwned ? 1 : 0,
+                'owned' => (int)$collectionStatus['owned'],
+                'prev_owned' => (int)$collectionStatus['prev_owned'],
+                'for_trade' => (int)$collectionStatus['for_trade'],
+                'want' => (int)$collectionStatus['want'],
+                'want_to_play' => (int)$collectionStatus['want_to_play'],
+                'want_to_buy' => (int)$collectionStatus['want_to_buy'],
+                'wishlist' => (int)$collectionStatus['wishlist'],
+                'preordered' => (int)$collectionStatus['preordered'],
                 'thumbnail' => $thumbnail,
                 'image' => $image,
                 'rawJson' => json_encode($raw, JSON_UNESCAPED_SLASHES),
@@ -1069,9 +1187,9 @@ function get_existing_bgg_ids_from_database(): array {
 }
 
 /**
- * @return array<int, int>
+ * @return array<int, array<string, int|string|null>>
  */
-function get_existing_owned_status_by_bgg_id_from_database(): array {
+function get_existing_collection_status_by_bgg_id_from_database(): array {
     $activeDbPath = __DIR__ . '/../bgg.db';
     if (!is_file($activeDbPath)) {
         throw new RuntimeException('active_db_missing');
@@ -1080,25 +1198,48 @@ function get_existing_owned_status_by_bgg_id_from_database(): array {
     $db = new SQLite3($activeDbPath, SQLITE3_OPEN_READONLY);
     $db->busyTimeout(3000);
 
-    $result = $db->query('SELECT bggId, owned FROM games WHERE bggId IS NOT NULL AND bggId > 0');
-    if ($result === false) {
-        $db->close();
-        throw new RuntimeException('games_select_existing_owned_status_failed');
+    $existingColumns = get_games_table_columns($db);
+    $selectParts = ['bggId'];
+    foreach (array_keys(get_collection_status_defaults()) as $column) {
+        if (isset($existingColumns[strtolower($column)])) {
+            $selectParts[] = $column;
+        }
     }
 
-    $ownedByBggId = [];
+    $result = $db->query('SELECT ' . implode(', ', $selectParts) . ' FROM games WHERE bggId IS NOT NULL AND bggId > 0');
+    if ($result === false) {
+        $db->close();
+        throw new RuntimeException('games_select_existing_collection_status_failed');
+    }
+
+    $statusByBggId = [];
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $bggId = (int)($row['bggId'] ?? 0);
         if ($bggId <= 0) {
             continue;
         }
 
-        $ownedByBggId[$bggId] = (int)($row['owned'] ?? 0);
+        $status = get_collection_status_defaults();
+        foreach ($status as $column => $defaultValue) {
+            if (!array_key_exists($column, $row)) {
+                continue;
+            }
+
+            if ($column === 'bgg_lastmodified') {
+                $value = trim((string)$row[$column]);
+                $status[$column] = $value !== '' ? $value : null;
+                continue;
+            }
+
+            $status[$column] = ((int)$row[$column]) !== 0 ? 1 : 0;
+        }
+
+        $statusByBggId[$bggId] = $status;
     }
 
     $db->close();
 
-    return $ownedByBggId;
+    return $statusByBggId;
 }
 
 /**
@@ -1132,34 +1273,50 @@ function filter_games_not_in_database(array $games, array $existingBggIds): arra
 
 /**
  * @param array<int, array<string, mixed>> $games
- * @param array<int, int> $existingOwnedByBggId
- * @return array<int, array{bggId:int, owned:int}>
+ * @param array<int, array<string, int|string|null>> $existingStatusByBggId
+ * @return array<int, array<string, mixed>>
  */
-function get_games_with_changed_owned_status(array $games, array $existingOwnedByBggId): array {
-    if ($games === [] || $existingOwnedByBggId === []) {
+function get_games_with_changed_collection_status(array $games, array $existingStatusByBggId): array {
+    if ($games === [] || $existingStatusByBggId === []) {
         return [];
     }
 
     $changed = [];
+    $statusColumns = array_keys(get_collection_status_defaults());
     foreach ($games as $game) {
         $bggId = (int)($game['bggId'] ?? 0);
-        if ($bggId <= 0 || !array_key_exists($bggId, $existingOwnedByBggId)) {
+        if ($bggId <= 0 || !array_key_exists($bggId, $existingStatusByBggId)) {
             continue;
         }
 
-        $newOwned = (int)($game['owned'] ?? 0);
-        if ($newOwned !== 0) {
-            $newOwned = 1;
+        $hasChange = false;
+        foreach ($statusColumns as $column) {
+            $newValue = $game[$column] ?? null;
+            $currentValue = $existingStatusByBggId[$bggId][$column] ?? get_collection_status_defaults()[$column];
+
+            if ($column === 'bgg_lastmodified') {
+                $normalizedNewValue = $newValue === null ? null : trim((string)$newValue);
+                $normalizedCurrentValue = $currentValue === null ? null : trim((string)$currentValue);
+                if ($normalizedNewValue !== $normalizedCurrentValue) {
+                    $hasChange = true;
+                    break;
+                }
+                continue;
+            }
+
+            $normalizedNewValue = ((int)$newValue) !== 0 ? 1 : 0;
+            $normalizedCurrentValue = ((int)$currentValue) !== 0 ? 1 : 0;
+            if ($normalizedNewValue !== $normalizedCurrentValue) {
+                $hasChange = true;
+                break;
+            }
         }
 
-        if ($existingOwnedByBggId[$bggId] === $newOwned) {
+        if (!$hasChange) {
             continue;
         }
 
-        $changed[] = [
-            'bggId' => $bggId,
-            'owned' => $newOwned,
-        ];
+        $changed[] = $game;
     }
 
     return $changed;
@@ -1188,7 +1345,7 @@ function get_bgg_ids_removed_from_collection(array $existingBggIds, array $colle
 
 /**
  * @param array<int, array<string, mixed>> $allOwnedGames
- * @return array{fetchedGames:int, newGames:int, insertedGames:int, removedGames:int, updatedOwnedGames:int}
+ * @return array{fetchedGames:int, newGames:int, insertedGames:int, removedGames:int, updatedStatusGames:int}
  */
 function append_new_games_to_existing_database(array $allOwnedGames): array {
     ensure_bgg_sync_dependencies();
@@ -1199,9 +1356,9 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
     }
 
     $existingBggIds = get_existing_bgg_ids_from_database();
-    $existingOwnedByBggId = get_existing_owned_status_by_bgg_id_from_database();
+    $existingStatusByBggId = get_existing_collection_status_by_bgg_id_from_database();
     $newGames = filter_games_not_in_database($allOwnedGames, $existingBggIds);
-    $changedOwnedGames = get_games_with_changed_owned_status($allOwnedGames, $existingOwnedByBggId);
+    $changedStatusGames = get_games_with_changed_collection_status($allOwnedGames, $existingStatusByBggId);
     $collectionBggIds = array_values(array_unique(array_map(static function (array $game): int {
         return (int)($game['bggId'] ?? 0);
     }, $allOwnedGames)));
@@ -1210,13 +1367,13 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
     }));
     $removedBggIds = get_bgg_ids_removed_from_collection($existingBggIds, $collectionBggIds);
 
-    if ($newGames === [] && $removedBggIds === [] && $changedOwnedGames === []) {
+    if ($newGames === [] && $removedBggIds === [] && $changedStatusGames === []) {
         return [
             'fetchedGames' => count($allOwnedGames),
             'newGames' => 0,
             'insertedGames' => 0,
             'removedGames' => 0,
-            'updatedOwnedGames' => 0,
+            'updatedStatusGames' => 0,
         ];
     }
 
@@ -1224,45 +1381,69 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
     $db->busyTimeout(3000);
     $db->exec('PRAGMA journal_mode=WAL;');
     $db->exec('PRAGMA synchronous=NORMAL;');
+    ensure_games_status_columns($db);
 
     $insertedGames = 0;
     $removedGames = 0;
-    $updatedOwnedGames = 0;
+    $updatedStatusGames = 0;
     try {
         $db->exec('BEGIN TRANSACTION');
         if ($newGames !== []) {
             $insertedGames = insert_games($db, $newGames, gmdate('c'), 0);
         }
 
-        if ($changedOwnedGames !== []) {
-            $updateStmt = $db->prepare('UPDATE games SET owned = :owned, modificationDate = :modificationDate, syncedAt = :syncedAt WHERE bggId = :bggId');
+        if ($changedStatusGames !== []) {
+            $updateStmt = $db->prepare('UPDATE games SET
+                owned = :owned,
+                prev_owned = :prevOwned,
+                for_trade = :forTrade,
+                want = :want,
+                want_to_play = :wantToPlay,
+                want_to_buy = :wantToBuy,
+                wishlist = :wishlist,
+                preordered = :preordered,
+                bgg_lastmodified = :bggLastModified,
+                rawJson = :rawJson,
+                modificationDate = :modificationDate,
+                syncedAt = :syncedAt
+            WHERE bggId = :bggId');
             if (!$updateStmt) {
-                throw new RuntimeException('games_owned_update_prepare_failed');
+                throw new RuntimeException('games_status_update_prepare_failed');
             }
 
-            $totalOwnershipChanges = count($changedOwnedGames);
+            $totalStatusChanges = count($changedStatusGames);
             $syncedAt = gmdate('c');
-            foreach ($changedOwnedGames as $index => $game) {
+            foreach ($changedStatusGames as $index => $game) {
                 $updateStmt->bindValue(':owned', (int)$game['owned'], SQLITE3_INTEGER);
+                $updateStmt->bindValue(':prevOwned', (int)($game['prev_owned'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':forTrade', (int)($game['for_trade'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':want', (int)($game['want'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':wantToPlay', (int)($game['want_to_play'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':wantToBuy', (int)($game['want_to_buy'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':wishlist', (int)($game['wishlist'] ?? 0), SQLITE3_INTEGER);
+                $updateStmt->bindValue(':preordered', (int)($game['preordered'] ?? 0), SQLITE3_INTEGER);
+                $bggLastModified = $game['bgg_lastmodified'] ?? null;
+                $updateStmt->bindValue(':bggLastModified', $bggLastModified, $bggLastModified === null ? SQLITE3_NULL : SQLITE3_TEXT);
+                $updateStmt->bindValue(':rawJson', (string)($game['rawJson'] ?? ''), SQLITE3_TEXT);
                 $updateStmt->bindValue(':modificationDate', $syncedAt, SQLITE3_TEXT);
                 $updateStmt->bindValue(':syncedAt', $syncedAt, SQLITE3_TEXT);
                 $updateStmt->bindValue(':bggId', (int)$game['bggId'], SQLITE3_INTEGER);
 
                 if ($updateStmt->execute() === false) {
-                    throw new RuntimeException('games_owned_update_execute_failed');
+                    throw new RuntimeException('games_status_update_execute_failed');
                 }
 
                 if ($db->changes() > 0) {
-                    $updatedOwnedGames += 1;
+                    $updatedStatusGames += 1;
                 }
 
-                if ((($index + 1) % 10) === 0 || ($index + 1) === $totalOwnershipChanges) {
+                if ((($index + 1) % 10) === 0 || ($index + 1) === $totalStatusChanges) {
                     write_sync_progress([
                         'state' => 'imported',
-                        'phase' => 'sync_owned_status',
-                        'message' => 'Updating ownership status changes...',
+                        'phase' => 'sync_collection_status',
+                        'message' => 'Updating collection status changes...',
                         'currentGames' => $index + 1,
-                        'totalGames' => $totalOwnershipChanges,
+                        'totalGames' => $totalStatusChanges,
                         'currentPlays' => 0,
                         'totalPlays' => 0,
                     ]);
@@ -1315,7 +1496,7 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
         'newGames' => count($newGames),
         'insertedGames' => $insertedGames,
         'removedGames' => $removedGames,
-        'updatedOwnedGames' => $updatedOwnedGames,
+        'updatedStatusGames' => $updatedStatusGames,
     ];
 }
 
@@ -1323,11 +1504,11 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
     $stmt = $db->prepare('INSERT INTO games (
         id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, recommended_with, designer, rating, average_rating, modificationDate,
         bgg_rating, weight, isExpansion, isBaseGame, urlThumb, maxPlayTime, minPlayTime,
-        bggId, owned, bgg_lastmodified, rawJson, syncedAt
+        bggId, owned, prev_owned, for_trade, want, want_to_play, want_to_buy, wishlist, preordered, bgg_lastmodified, rawJson, syncedAt
     ) VALUES (
         :id, :name, :bggYear, :minPlayerCount, :maxPlayerCount, :bestWith, :recommendedWith, :designer, :rating, :averageRating, :modificationDate,
         :bggRatingSnake, :weight, :isExpansion, :isBaseGame, :urlThumb, :maxPlayTime, :minPlayTime,
-        :bggId, :owned, :bggLastModified, :rawJson, :syncedAt
+        :bggId, :owned, :prevOwned, :forTrade, :want, :wantToPlay, :wantToBuy, :wishlist, :preordered, :bggLastModified, :rawJson, :syncedAt
     )');
 
     if (!$stmt) {
@@ -1362,6 +1543,13 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
         $stmt->bindValue(':minPlayTime', (int)($game['minPlayTime'] ?? 0), SQLITE3_INTEGER);
         $stmt->bindValue(':bggId', (int)$game['bggId'], SQLITE3_INTEGER);
         $stmt->bindValue(':owned', (int)($game['owned'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':prevOwned', (int)($game['prev_owned'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':forTrade', (int)($game['for_trade'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':want', (int)($game['want'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':wantToPlay', (int)($game['want_to_play'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':wantToBuy', (int)($game['want_to_buy'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':wishlist', (int)($game['wishlist'] ?? 0), SQLITE3_INTEGER);
+        $stmt->bindValue(':preordered', (int)($game['preordered'] ?? 0), SQLITE3_INTEGER);
         $bggLastModified = $game['bgg_lastmodified'] ?? null;
         $stmt->bindValue(':bggLastModified', $bggLastModified, $bggLastModified === null ? SQLITE3_NULL : SQLITE3_TEXT);
         $stmt->bindValue(':rawJson', (string)$game['rawJson'], SQLITE3_TEXT);
@@ -1575,6 +1763,13 @@ function create_synced_bgg_database(array $games, array $plays, array $players):
             minPlayTime INTEGER DEFAULT 0,
             bggId INTEGER,
             owned INTEGER DEFAULT 1,
+            prev_owned INTEGER DEFAULT 0,
+            for_trade INTEGER DEFAULT 0,
+            want INTEGER DEFAULT 0,
+            want_to_play INTEGER DEFAULT 0,
+            want_to_buy INTEGER DEFAULT 0,
+            wishlist INTEGER DEFAULT 0,
+            preordered INTEGER DEFAULT 0,
             bgg_lastmodified TEXT,
             rawJson TEXT,
             syncedAt TEXT

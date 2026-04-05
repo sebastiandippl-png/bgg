@@ -81,6 +81,13 @@ window.BGStatsData = (function createDataModule() {
         const hasBestWithColumn = gameColumns.includes('best_with');
         const hasRecommendedWithColumn = gameColumns.includes('recommended_with');
         const hasDesignerColumn = gameColumns.includes('designer');
+        const hasPrevOwnedColumn = gameColumns.includes('prev_owned');
+        const hasForTradeColumn = gameColumns.includes('for_trade');
+        const hasWantColumn = gameColumns.includes('want');
+        const hasWantToPlayColumn = gameColumns.includes('want_to_play');
+        const hasWantToBuyColumn = gameColumns.includes('want_to_buy');
+        const hasWishlistColumn = gameColumns.includes('wishlist');
+        const hasPreorderedColumn = gameColumns.includes('preordered');
 
         const result = db.exec(
             `SELECT id, name, bggYear, minPlayerCount, maxPlayerCount,
@@ -95,7 +102,14 @@ window.BGStatsData = (function createDataModule() {
                      ${hasBggLastModifiedColumn ? 'bgg_lastmodified' : 'NULL as bgg_lastmodified'},
                      ${hasBestWithColumn ? 'best_with' : 'NULL as best_with'},
                      ${hasRecommendedWithColumn ? 'recommended_with' : 'NULL as recommended_with'},
-                     ${hasDesignerColumn ? 'designer' : 'NULL as designer'}
+                     ${hasDesignerColumn ? 'designer' : 'NULL as designer'},
+                     ${hasPrevOwnedColumn ? 'prev_owned' : '0 as prev_owned'},
+                     ${hasForTradeColumn ? 'for_trade' : '0 as for_trade'},
+                     ${hasWantColumn ? 'want' : '0 as want'},
+                     ${hasWantToPlayColumn ? 'want_to_play' : '0 as want_to_play'},
+                     ${hasWantToBuyColumn ? 'want_to_buy' : '0 as want_to_buy'},
+                     ${hasWishlistColumn ? 'wishlist' : '0 as wishlist'},
+                     ${hasPreorderedColumn ? 'preordered' : '0 as preordered'}
              FROM games`
         );
         if (result.length === 0) {
@@ -126,7 +140,14 @@ window.BGStatsData = (function createDataModule() {
                 urlThumb: row[12] || null,
                 bestWith: row[18] || null,
                 recommendedWith: row[19] || null,
-                designer: row[20] || null
+                designer: row[20] || null,
+                prevOwned: toBoolean(row[21]),
+                forTrade: toBoolean(row[22]),
+                want: toBoolean(row[23]),
+                wantToPlay: toBoolean(row[24]),
+                wantToBuy: toBoolean(row[25]),
+                wishlist: toBoolean(row[26]),
+                preordered: toBoolean(row[27])
             };
         });
     }
