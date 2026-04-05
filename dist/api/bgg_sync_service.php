@@ -955,7 +955,6 @@ function fetch_plays_from_bgg(string $username, int $totalGames = 0, ?string $mi
                     'quantity' => 1,
                     'location' => $location,
                     'comments' => $comments,
-                    'playerScores' => json_encode($playerScores, JSON_UNESCAPED_SLASHES),
                     'rawJson' => json_encode($raw + ['quantityIndex' => $copyIndex], JSON_UNESCAPED_SLASHES),
                 ];
             }
@@ -1030,9 +1029,9 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
         $db->exec('CREATE INDEX IF NOT EXISTS idx_play_players_playerRefId ON play_players (playerRefId)');
 
         $playsStmt = $db->prepare('INSERT OR IGNORE INTO plays (
-            id, playDate, durationMin, gameRefId, quantity, location, comments, playerScores, rawJson
+            id, playDate, durationMin, gameRefId, quantity, location, comments, rawJson
         ) VALUES (
-            :id, :playDate, :durationMin, :gameRefId, :quantity, :location, :comments, :playerScores, :rawJson
+            :id, :playDate, :durationMin, :gameRefId, :quantity, :location, :comments, :rawJson
         )');
         if (!$playsStmt) {
             throw new RuntimeException('plays_upsert_prepare_failed');
@@ -1047,7 +1046,6 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
             $playsStmt->bindValue(':quantity', (int)$play['quantity'], SQLITE3_INTEGER);
             $playsStmt->bindValue(':location', (string)$play['location'], SQLITE3_TEXT);
             $playsStmt->bindValue(':comments', (string)$play['comments'], SQLITE3_TEXT);
-            $playsStmt->bindValue(':playerScores', (string)$play['playerScores'], SQLITE3_TEXT);
             $playsStmt->bindValue(':rawJson', (string)$play['rawJson'], SQLITE3_TEXT);
 
             if ($playsStmt->execute() === false) {
@@ -1578,9 +1576,9 @@ function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPla
 
 function insert_plays(SQLite3 $db, array $plays, int $totalGames): int {
     $stmt = $db->prepare('INSERT INTO plays (
-        id, playDate, durationMin, gameRefId, quantity, location, comments, playerScores, rawJson
+        id, playDate, durationMin, gameRefId, quantity, location, comments, rawJson
     ) VALUES (
-        :id, :playDate, :durationMin, :gameRefId, :quantity, :location, :comments, :playerScores, :rawJson
+        :id, :playDate, :durationMin, :gameRefId, :quantity, :location, :comments, :rawJson
     )');
 
     if (!$stmt) {
@@ -1597,7 +1595,6 @@ function insert_plays(SQLite3 $db, array $plays, int $totalGames): int {
         $stmt->bindValue(':quantity', (int)$play['quantity'], SQLITE3_INTEGER);
         $stmt->bindValue(':location', (string)$play['location'], SQLITE3_TEXT);
         $stmt->bindValue(':comments', (string)$play['comments'], SQLITE3_TEXT);
-        $stmt->bindValue(':playerScores', (string)$play['playerScores'], SQLITE3_TEXT);
         $stmt->bindValue(':rawJson', (string)$play['rawJson'], SQLITE3_TEXT);
 
         if ($stmt->execute() === false) {
@@ -1784,7 +1781,6 @@ function create_synced_bgg_database(array $games, array $plays, array $players):
             quantity INTEGER DEFAULT 1,
             location TEXT,
             comments TEXT,
-            playerScores TEXT,
             rawJson TEXT
         )');
         $db->exec('CREATE INDEX idx_plays_gameRefId ON plays (gameRefId)');

@@ -194,7 +194,6 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 | quantity | INTEGER | Number of plays for this record (usually 1) |
 | location | TEXT | Location string from BGG |
 | comments | TEXT | Play comments from BGG |
-| playerScores | TEXT | JSON array `[{playerRefId, playerName, score, winner, new, rating}, ...]` |
 | rawJson | TEXT | Full raw play record from BGG |
 
 ### players table

@@ -9,7 +9,7 @@ window.BGStatsData = (function createDataModule() {
 
     function loadPlays(db) {
         const result = db.exec(`
-            SELECT date(p.playDate) as Date, g.name as Game, p.durationMin as Duration, p.gameRefId as gameId, g.id as matchedGameId, p.rawJson, p.playerScores
+            SELECT date(p.playDate) as Date, g.name as Game, p.durationMin as Duration, p.gameRefId as gameId, g.id as matchedGameId, p.rawJson, p.id as playId
             FROM plays p
             LEFT JOIN games g ON p.gameRefId = g.id
         `);
@@ -18,12 +18,38 @@ window.BGStatsData = (function createDataModule() {
             return { plays: [], lastPlayedByGameId: {} };
         }
 
+        // Load play_players data separately
+        const playPlayersResult = db.exec(`
+            SELECT playId, playerRefId, playerName, score, winner
+            FROM play_players
+            ORDER BY playId
+        `);
+
+        const playerScoresByPlayId = {};
+        if (playPlayersResult.length > 0) {
+            playPlayersResult[0].values.forEach(row => {
+                const playId = row[0];
+                if (!playerScoresByPlayId[playId]) {
+                    playerScoresByPlayId[playId] = [];
+                }
+                playerScoresByPlayId[playId].push({
+                    playerRefId: row[1],
+                    playerName: row[2],
+                    score: row[3] !== null ? parseFloat(row[3]) : null,
+                    winner: row[4] === 1 || row[4] === true,
+                    new: false,
+                    rating: null
+                });
+            });
+        }
+
         const lastPlayedByGameId = {};
         const plays = result[0].values.map(row => {
             const playDate = row[0];
             const gameId = row[3];
             const matchedGameId = row[4];
-            let playerScores = [];
+            const playId = row[6];
+            let playerScores = playerScoresByPlayId[playId] || [];
             let gameName = row[1];
 
             if (!gameName && row[5]) {
@@ -42,16 +68,6 @@ window.BGStatsData = (function createDataModule() {
 
             if (!lastPlayedByGameId[gameId] || playDate > lastPlayedByGameId[gameId]) {
                 lastPlayedByGameId[gameId] = playDate;
-            }
-
-            if (row[6]) {
-                try {
-                    const parsedScores = JSON.parse(row[6]);
-                    if (Array.isArray(parsedScores)) {
-                        playerScores = parsedScores;
-                    }
-                } catch (_) {
-                }
             }
 
             return {
@@ -204,27 +220,21 @@ window.BGStatsData = (function createDataModule() {
             });
         }
 
-        const playsResult = db.exec("SELECT playerScores FROM plays WHERE playerScores IS NOT NULL AND playerScores != ''");
-        if (playsResult.length > 0) {
-            playsResult[0].values.forEach(row => {
-                try {
-                    const scores = JSON.parse(row[0]);
-                    if (!Array.isArray(scores)) {
-                        return;
-                    }
+        const playPlayersResult = db.exec("SELECT playerRefId, playerName, winner FROM play_players");
+        if (playPlayersResult.length > 0) {
+            playPlayersResult[0].values.forEach(row => {
+                const playerRefId = row[0];
+                const playerName = row[1];
+                const winner = row[2];
 
-                    scores.forEach(score => {
-                        const player = getOrCreatePlayer(score.playerRefId, score.playerName);
-                        if (!player || !player.name) {
-                            return;
-                        }
+                const player = getOrCreatePlayer(playerRefId, playerName);
+                if (!player || !player.name) {
+                    return;
+                }
 
-                        player.plays += 1;
-                        if (score.winner === true || score.winner === 1 || score.winner === '1') {
-                            player.wins += 1;
-                        }
-                    });
-                } catch (_) {
+                player.plays += 1;
+                if (winner === 1 || winner === true) {
+                    player.wins += 1;
                 }
             });
         }
