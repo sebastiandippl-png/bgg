@@ -19,7 +19,7 @@ This is just a toy project to learn different things for me. Hence there are ton
 4. The backend fetches data for the BGG user configured via `BGSTATS_BGG_USERNAME` (env var or `local_config.php`) and publishes a rebuilt `dist/bgg.db`.
 
 For incremental updates after a full sync, use the Delta Sync card:
-- `Get New Games`: fetches current owned collection, inserts missing games, and removes games that are no longer in the collection (no DB rebuild)
+- `Get New Games`: fetches current owned collection, inserts missing games, updates changed ownership flags on existing games, and removes games that are no longer in the collection (no DB rebuild)
 - `Game Metadata Delta Sync`: fills missing metadata for games in the existing DB
 - `Get Last Plays`: appends only recent plays not already stored
 

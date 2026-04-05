@@ -281,6 +281,16 @@ async function pollStatus() {
 
 ---
 
+### Issue: Ownership Flags Drift In Incremental New-Games Sync
+
+**Root Cause**: Insert/remove reconciliation by `bggId` alone does not catch ownership flips for rows that already exist in `games`.
+
+**Solution**: In `Get New Games`, compare fetched ownership against existing `games.owned` and update changed rows in-place during the same transaction.
+
+**Code Location**: `dist/api/bgg_sync_service.php` -> `append_new_games_to_existing_database()`
+
+---
+
 ## Caching Strategy
 
 ### File-Based Cache

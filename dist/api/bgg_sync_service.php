@@ -1069,6 +1069,39 @@ function get_existing_bgg_ids_from_database(): array {
 }
 
 /**
+ * @return array<int, int>
+ */
+function get_existing_owned_status_by_bgg_id_from_database(): array {
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        throw new RuntimeException('active_db_missing');
+    }
+
+    $db = new SQLite3($activeDbPath, SQLITE3_OPEN_READONLY);
+    $db->busyTimeout(3000);
+
+    $result = $db->query('SELECT bggId, owned FROM games WHERE bggId IS NOT NULL AND bggId > 0');
+    if ($result === false) {
+        $db->close();
+        throw new RuntimeException('games_select_existing_owned_status_failed');
+    }
+
+    $ownedByBggId = [];
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $bggId = (int)($row['bggId'] ?? 0);
+        if ($bggId <= 0) {
+            continue;
+        }
+
+        $ownedByBggId[$bggId] = (int)($row['owned'] ?? 0);
+    }
+
+    $db->close();
+
+    return $ownedByBggId;
+}
+
+/**
  * @param array<int, array<string, mixed>> $games
  * @param int[] $existingBggIds
  * @return array<int, array<string, mixed>>
@@ -1098,6 +1131,41 @@ function filter_games_not_in_database(array $games, array $existingBggIds): arra
 }
 
 /**
+ * @param array<int, array<string, mixed>> $games
+ * @param array<int, int> $existingOwnedByBggId
+ * @return array<int, array{bggId:int, owned:int}>
+ */
+function get_games_with_changed_owned_status(array $games, array $existingOwnedByBggId): array {
+    if ($games === [] || $existingOwnedByBggId === []) {
+        return [];
+    }
+
+    $changed = [];
+    foreach ($games as $game) {
+        $bggId = (int)($game['bggId'] ?? 0);
+        if ($bggId <= 0 || !array_key_exists($bggId, $existingOwnedByBggId)) {
+            continue;
+        }
+
+        $newOwned = (int)($game['owned'] ?? 0);
+        if ($newOwned !== 0) {
+            $newOwned = 1;
+        }
+
+        if ($existingOwnedByBggId[$bggId] === $newOwned) {
+            continue;
+        }
+
+        $changed[] = [
+            'bggId' => $bggId,
+            'owned' => $newOwned,
+        ];
+    }
+
+    return $changed;
+}
+
+/**
  * @param int[] $existingBggIds
  * @param int[] $collectionBggIds
  * @return int[]
@@ -1120,7 +1188,7 @@ function get_bgg_ids_removed_from_collection(array $existingBggIds, array $colle
 
 /**
  * @param array<int, array<string, mixed>> $allOwnedGames
- * @return array{fetchedGames:int, newGames:int, insertedGames:int, removedGames:int}
+ * @return array{fetchedGames:int, newGames:int, insertedGames:int, removedGames:int, updatedOwnedGames:int}
  */
 function append_new_games_to_existing_database(array $allOwnedGames): array {
     ensure_bgg_sync_dependencies();
@@ -1131,7 +1199,9 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
     }
 
     $existingBggIds = get_existing_bgg_ids_from_database();
+    $existingOwnedByBggId = get_existing_owned_status_by_bgg_id_from_database();
     $newGames = filter_games_not_in_database($allOwnedGames, $existingBggIds);
+    $changedOwnedGames = get_games_with_changed_owned_status($allOwnedGames, $existingOwnedByBggId);
     $collectionBggIds = array_values(array_unique(array_map(static function (array $game): int {
         return (int)($game['bggId'] ?? 0);
     }, $allOwnedGames)));
@@ -1140,12 +1210,13 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
     }));
     $removedBggIds = get_bgg_ids_removed_from_collection($existingBggIds, $collectionBggIds);
 
-    if ($newGames === [] && $removedBggIds === []) {
+    if ($newGames === [] && $removedBggIds === [] && $changedOwnedGames === []) {
         return [
             'fetchedGames' => count($allOwnedGames),
             'newGames' => 0,
             'insertedGames' => 0,
             'removedGames' => 0,
+            'updatedOwnedGames' => 0,
         ];
     }
 
@@ -1156,10 +1227,47 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
 
     $insertedGames = 0;
     $removedGames = 0;
+    $updatedOwnedGames = 0;
     try {
         $db->exec('BEGIN TRANSACTION');
         if ($newGames !== []) {
             $insertedGames = insert_games($db, $newGames, gmdate('c'), 0);
+        }
+
+        if ($changedOwnedGames !== []) {
+            $updateStmt = $db->prepare('UPDATE games SET owned = :owned, modificationDate = :modificationDate, syncedAt = :syncedAt WHERE bggId = :bggId');
+            if (!$updateStmt) {
+                throw new RuntimeException('games_owned_update_prepare_failed');
+            }
+
+            $totalOwnershipChanges = count($changedOwnedGames);
+            $syncedAt = gmdate('c');
+            foreach ($changedOwnedGames as $index => $game) {
+                $updateStmt->bindValue(':owned', (int)$game['owned'], SQLITE3_INTEGER);
+                $updateStmt->bindValue(':modificationDate', $syncedAt, SQLITE3_TEXT);
+                $updateStmt->bindValue(':syncedAt', $syncedAt, SQLITE3_TEXT);
+                $updateStmt->bindValue(':bggId', (int)$game['bggId'], SQLITE3_INTEGER);
+
+                if ($updateStmt->execute() === false) {
+                    throw new RuntimeException('games_owned_update_execute_failed');
+                }
+
+                if ($db->changes() > 0) {
+                    $updatedOwnedGames += 1;
+                }
+
+                if ((($index + 1) % 10) === 0 || ($index + 1) === $totalOwnershipChanges) {
+                    write_sync_progress([
+                        'state' => 'imported',
+                        'phase' => 'sync_owned_status',
+                        'message' => 'Updating ownership status changes...',
+                        'currentGames' => $index + 1,
+                        'totalGames' => $totalOwnershipChanges,
+                        'currentPlays' => 0,
+                        'totalPlays' => 0,
+                    ]);
+                }
+            }
         }
 
         if ($removedBggIds !== []) {
@@ -1207,6 +1315,7 @@ function append_new_games_to_existing_database(array $allOwnedGames): array {
         'newGames' => count($newGames),
         'insertedGames' => $insertedGames,
         'removedGames' => $removedGames,
+        'updatedOwnedGames' => $updatedOwnedGames,
     ];
 }
 

@@ -32,6 +32,7 @@ Behavior:
 - Fetches the full owned collection from BGG.
 - Compares fetched `bggId` values against existing rows in `games`.
 - Inserts only games that are not yet present.
+- Updates `games.owned` for existing rows when ownership changed on BGG.
 - Removes games from `games` when they are no longer present in the fetched collection.
 - Does not delete or recreate `bgg.db`.
 
