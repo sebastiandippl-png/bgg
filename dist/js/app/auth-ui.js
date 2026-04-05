@@ -12,6 +12,7 @@
     const ADMIN_ELEMENTS = [
         'admin-sync-games-btn',
         'admin-sync-metadata-btn',
+        'admin-sync-metadata-delta-btn',
         'admin-sync-plays-btn',
         'admin-sync-last-plays-btn',
         'admin-logout-btn'

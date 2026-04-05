@@ -544,6 +544,160 @@ function hydrate_games_with_bgg_details(array $games): array {
 }
 
 /**
+ * Returns only the games from $games whose bggId appears in $bggIdsWithoutMetadata.
+ * Used for delta metadata sync.
+ *
+ * @param array<int, array<string, mixed>> $games
+ * @param int[] $bggIdsWithoutMetadata
+ * @return array<int, array<string, mixed>>
+ */
+function filter_games_without_metadata(array $games, array $bggIdsWithoutMetadata): array {
+    if ($bggIdsWithoutMetadata === []) {
+        return [];
+    }
+    $lookup = array_flip($bggIdsWithoutMetadata);
+    return array_values(array_filter($games, static function (array $game) use ($lookup): bool {
+        return isset($lookup[(int)($game['bggId'] ?? 0)]);
+    }));
+}
+
+/**
+ * Fetches BGG metadata only for games whose bggId is in $bggIdsWithoutMetadata
+ * and writes the result into the existing bgg.db via UPDATE statements.
+ *
+ * @param array<int, array<string, mixed>> $allGames All games from the sync cache.
+ * @param int[] $bggIdsWithoutMetadata bggIds that are missing metadata in the DB.
+ * @return array{updatedGames: int}
+ */
+function apply_metadata_delta_to_database(array $allGames, array $bggIdsWithoutMetadata): array {
+    ensure_bgg_sync_dependencies();
+
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        throw new RuntimeException('active_db_missing');
+    }
+
+    $gamesNeedingMetadata = filter_games_without_metadata($allGames, $bggIdsWithoutMetadata);
+    if ($gamesNeedingMetadata === []) {
+        return ['updatedGames' => 0];
+    }
+
+    $hydratedGames = hydrate_games_with_bgg_details($gamesNeedingMetadata);
+
+    $db = new SQLite3($activeDbPath);
+    $db->busyTimeout(3000);
+    $db->exec('PRAGMA journal_mode=WAL;');
+    $db->exec('PRAGMA synchronous=NORMAL;');
+
+    $stmt = $db->prepare('UPDATE games SET
+        minPlayerCount = :minPlayerCount,
+        maxPlayerCount = :maxPlayerCount,
+        minPlayTime    = :minPlayTime,
+        maxPlayTime    = :maxPlayTime,
+        best_with      = :bestWith,
+        recommended_with = :recommendedWith,
+        designer       = :designer,
+        average_rating = :averageRating,
+        bgg_rating     = :bggRating,
+        weight         = :weight,
+        isExpansion    = :isExpansion,
+        isBaseGame     = :isBaseGame,
+        rawJson        = :rawJson
+    WHERE bggId = :bggId');
+
+    if (!$stmt) {
+        $db->close();
+        throw new RuntimeException('metadata_delta_update_prepare_failed');
+    }
+
+    $updatedGames = 0;
+    $totalGames = count($hydratedGames);
+
+    try {
+        $db->exec('BEGIN TRANSACTION');
+
+        foreach ($hydratedGames as $index => $game) {
+            $stmt->bindValue(':minPlayerCount', (int)($game['minPlayerCount'] ?? 0), SQLITE3_INTEGER);
+            $stmt->bindValue(':maxPlayerCount', (int)($game['maxPlayerCount'] ?? 0), SQLITE3_INTEGER);
+            $stmt->bindValue(':minPlayTime', (int)($game['minPlayTime'] ?? 0), SQLITE3_INTEGER);
+            $stmt->bindValue(':maxPlayTime', (int)($game['maxPlayTime'] ?? 0), SQLITE3_INTEGER);
+            $bestWith = $game['best_with'] ?? null;
+            $stmt->bindValue(':bestWith', $bestWith, $bestWith === null ? SQLITE3_NULL : SQLITE3_TEXT);
+            $recommendedWith = $game['recommended_with'] ?? null;
+            $stmt->bindValue(':recommendedWith', $recommendedWith, $recommendedWith === null ? SQLITE3_NULL : SQLITE3_TEXT);
+            $designer = $game['designer'] ?? null;
+            $stmt->bindValue(':designer', $designer, $designer === null ? SQLITE3_NULL : SQLITE3_TEXT);
+            $averageRating = $game['average_rating'] ?? null;
+            $stmt->bindValue(':averageRating', $averageRating, $averageRating === null ? SQLITE3_NULL : SQLITE3_FLOAT);
+            $bggRating = $game['bgg_rating'] ?? null;
+            $stmt->bindValue(':bggRating', $bggRating, $bggRating === null ? SQLITE3_NULL : SQLITE3_FLOAT);
+            $weight = $game['weight'] ?? null;
+            $stmt->bindValue(':weight', $weight, $weight === null ? SQLITE3_NULL : SQLITE3_FLOAT);
+            $stmt->bindValue(':isExpansion', (int)($game['isExpansion'] ?? 0), SQLITE3_INTEGER);
+            $stmt->bindValue(':isBaseGame', (int)($game['isBaseGame'] ?? 1), SQLITE3_INTEGER);
+            $stmt->bindValue(':rawJson', (string)($game['rawJson'] ?? ''), SQLITE3_TEXT);
+            $stmt->bindValue(':bggId', (int)($game['bggId'] ?? 0), SQLITE3_INTEGER);
+
+            if ($stmt->execute() === false) {
+                throw new RuntimeException('metadata_delta_update_execute_failed');
+            }
+
+            if ($db->changes() > 0) {
+                $updatedGames += 1;
+            }
+
+            write_sync_progress([
+                'state' => 'imported',
+                'phase' => 'metadata_delta_import',
+                'message' => 'Writing metadata delta into bgg.db...',
+                'currentGames' => $index + 1,
+                'totalGames' => $totalGames,
+                'currentPlays' => 0,
+                'totalPlays' => 0,
+            ]);
+        }
+
+        $db->exec('COMMIT');
+    } catch (Throwable $exception) {
+        $db->exec('ROLLBACK');
+        $db->close();
+        throw $exception;
+    }
+
+    $db->close();
+
+    return ['updatedGames' => $updatedGames];
+}
+
+/**
+ * Returns the bggIds of games in the existing database that are missing metadata
+ * (identified by weight IS NULL).
+ *
+ * @return int[]
+ */
+function get_bgg_ids_without_metadata(): array {
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        return [];
+    }
+
+    $db = new SQLite3($activeDbPath, SQLITE3_OPEN_READONLY);
+    $db->busyTimeout(3000);
+
+    $result = $db->query('SELECT bggId FROM games WHERE weight IS NULL AND bggId IS NOT NULL AND bggId > 0');
+    $ids = [];
+    if ($result !== false) {
+        while ($row = $result->fetchArray(SQLITE3_NUM)) {
+            $ids[] = (int)$row[0];
+        }
+    }
+
+    $db->close();
+
+    return $ids;
+}
+
+/**
  * @return array{plays: array<int, array<string, mixed>>, players: array<int, array<string, mixed>>}
  */
 function fetch_plays_from_bgg(string $username, int $totalGames = 0, ?string $minDate = null): array {

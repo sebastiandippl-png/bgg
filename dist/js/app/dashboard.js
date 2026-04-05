@@ -6,6 +6,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     let activeTabId = 'insights';
     const SYNC_BGG_GAMES_URL = 'api/sync_bgg_games.php';
     const SYNC_BGG_METADATA_URL = 'api/sync_bgg_metadata.php';
+    const SYNC_BGG_METADATA_DELTA_URL = 'api/sync_bgg_metadata_delta.php';
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
@@ -832,6 +833,16 @@ window.BGStatsDashboard = (function createDashboardModule() {
         });
     }
 
+    async function syncBggMetadataDelta() {
+        await runSyncAction({
+            buttonId: 'admin-sync-metadata-delta-btn',
+            syncUrl: SYNC_BGG_METADATA_DELTA_URL,
+            reloadDbOnSuccess: true,
+            busyLabel: 'Getting Metadata (Delta)...',
+            startMessage: 'Starting metadata delta sync...'
+        });
+    }
+
     async function syncBggPlays() {
         await runSyncAction({
             buttonId: 'admin-sync-plays-btn',
@@ -907,6 +918,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         hydrateDatabase,
         syncBggGames,
         syncBggMetadata,
+        syncBggMetadataDelta,
         syncBggPlays,
         syncBggLastPlays
     };

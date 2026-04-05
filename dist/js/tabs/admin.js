@@ -23,6 +23,16 @@
             });
         }
 
+        const syncMetadataDeltaButton = document.getElementById('admin-sync-metadata-delta-btn');
+        if (syncMetadataDeltaButton) {
+            syncMetadataDeltaButton.addEventListener('click', event => {
+                event.preventDefault();
+                if (window.BGStatsDashboard && window.BGStatsDashboard.syncBggMetadataDelta) {
+                    window.BGStatsDashboard.syncBggMetadataDelta();
+                }
+            });
+        }
+
         const syncPlaysButton = document.getElementById('admin-sync-plays-btn');
         if (syncPlaysButton) {
             syncPlaysButton.addEventListener('click', event => {
