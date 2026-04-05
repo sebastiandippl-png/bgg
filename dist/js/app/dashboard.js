@@ -470,6 +470,16 @@ window.BGStatsDashboard = (function createDashboardModule() {
         }
     }
 
+    function scrollToPageTop() {
+        window.scrollTo(0, 0);
+        if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+            document.body.scrollTop = 0;
+        }
+    }
+
     function switchTab(tabId, options = {}) {
         const { skipHashUpdate = false } = options;
 
@@ -485,6 +495,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         setActiveTabStyles(tabId);
 
         renderTab(tabId);
+        scrollToPageTop();
     }
 
     function handleSort(tabId, colKey) {
