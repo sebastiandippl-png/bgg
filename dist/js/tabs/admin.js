@@ -33,6 +33,16 @@
             });
         }
 
+        const syncNewGamesButton = document.getElementById('admin-sync-new-games-btn');
+        if (syncNewGamesButton) {
+            syncNewGamesButton.addEventListener('click', event => {
+                event.preventDefault();
+                if (window.BGStatsDashboard && window.BGStatsDashboard.syncBggNewGames) {
+                    window.BGStatsDashboard.syncBggNewGames();
+                }
+            });
+        }
+
         const syncPlaysButton = document.getElementById('admin-sync-plays-btn');
         if (syncPlaysButton) {
             syncPlaysButton.addEventListener('click', event => {

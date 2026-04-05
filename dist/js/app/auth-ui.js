@@ -10,7 +10,9 @@
     'use strict';
 
     const ADMIN_ELEMENTS = [
+        'admin-controls-shell',
         'admin-sync-games-btn',
+        'admin-sync-new-games-btn',
         'admin-sync-metadata-btn',
         'admin-sync-metadata-delta-btn',
         'admin-sync-plays-btn',

@@ -25,6 +25,16 @@ Example success response:
 }
 ```
 
+### POST /api/sync_bgg_new_games.php
+Admin-only incremental endpoint.
+
+Behavior:
+- Fetches the full owned collection from BGG.
+- Compares fetched `bggId` values against existing rows in `games`.
+- Inserts only games that are not yet present.
+- Removes games from `games` when they are no longer present in the fetched collection.
+- Does not delete or recreate `bgg.db`.
+
 ### GET /api/sync_bgg_status.php
 Admin-only endpoint that returns lightweight sync progress state.
 

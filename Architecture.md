@@ -29,7 +29,8 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 1. `sync_bgg_games.php` — Fetch full collection only (~30s)
 2. `sync_bgg_metadata.php` — Enrich games with details (~2-3 min, batched)
 3. `sync_bgg_plays.php` — Fetch all plays + build final DB (~5-10 min, paginated)
-4. `sync_bgg_last_plays.php` — Fetch only last-week plays and append only missing rows (no DB rebuild)
+4. `sync_bgg_new_games.php` — Fetch owned collection and append only games not yet present (no DB rebuild)
+5. `sync_bgg_last_plays.php` — Fetch only last-week plays and append only missing rows (no DB rebuild)
 
 **Each stage:**
 - Writes intermediate SQLite snapshot
@@ -41,6 +42,11 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 - Requests BGG plays with `mindate=<today-7d>`
 - Uses `INSERT OR IGNORE` on `plays`, `players`, and `play_players`
 - Keeps existing `bgg.db` and all existing rows intact (no delete/recreate)
+
+**Incremental stage behavior (`sync_bgg_new_games.php`):**
+- Requests the full owned collection using the same fetch path as `sync_bgg_games.php`
+- Compares fetched `bggId` values with `games.bggId` already in `bgg.db`
+- Inserts only missing games into `games` and removes games no longer present in the fetched collection (no delete/recreate)
 
 ### Database Publishing Pattern
 
@@ -99,7 +105,10 @@ set_time_limit(0); // No timeout
 
 Admin user clicks "Get Games" → "Get Metadata" → "Get Plays + Build DB" buttons sequentially.
 
-For quick updates between full syncs, admin can click `Get Last Plays.` to append only new plays from the last week.
+For quick updates between full syncs, admin can use Delta Sync actions:
+- `Get New Games` to append only newly owned titles
+- `Game Metadata Delta Sync` to fill metadata gaps
+- `Get Last Plays` to append only recent plays
 
 ### OnceUpon Tab Flow
 

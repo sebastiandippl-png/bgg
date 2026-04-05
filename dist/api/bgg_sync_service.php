@@ -1040,6 +1040,176 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
     ];
 }
 
+/**
+ * @return int[]
+ */
+function get_existing_bgg_ids_from_database(): array {
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        throw new RuntimeException('active_db_missing');
+    }
+
+    $db = new SQLite3($activeDbPath, SQLITE3_OPEN_READONLY);
+    $db->busyTimeout(3000);
+
+    $result = $db->query('SELECT bggId FROM games WHERE bggId IS NOT NULL AND bggId > 0');
+    if ($result === false) {
+        $db->close();
+        throw new RuntimeException('games_select_existing_bgg_ids_failed');
+    }
+
+    $ids = [];
+    while ($row = $result->fetchArray(SQLITE3_NUM)) {
+        $ids[] = (int)$row[0];
+    }
+
+    $db->close();
+
+    return $ids;
+}
+
+/**
+ * @param array<int, array<string, mixed>> $games
+ * @param int[] $existingBggIds
+ * @return array<int, array<string, mixed>>
+ */
+function filter_games_not_in_database(array $games, array $existingBggIds): array {
+    if ($games === []) {
+        return [];
+    }
+
+    $existingLookup = array_flip($existingBggIds);
+    $newGames = [];
+
+    foreach ($games as $game) {
+        $bggId = (int)($game['bggId'] ?? 0);
+        if ($bggId <= 0) {
+            continue;
+        }
+
+        if (isset($existingLookup[$bggId])) {
+            continue;
+        }
+
+        $newGames[] = $game;
+    }
+
+    return $newGames;
+}
+
+/**
+ * @param int[] $existingBggIds
+ * @param int[] $collectionBggIds
+ * @return int[]
+ */
+function get_bgg_ids_removed_from_collection(array $existingBggIds, array $collectionBggIds): array {
+    if ($existingBggIds === []) {
+        return [];
+    }
+
+    $collectionLookup = array_flip($collectionBggIds);
+    $removed = [];
+    foreach ($existingBggIds as $bggId) {
+        if (!isset($collectionLookup[$bggId])) {
+            $removed[] = (int)$bggId;
+        }
+    }
+
+    return $removed;
+}
+
+/**
+ * @param array<int, array<string, mixed>> $allOwnedGames
+ * @return array{fetchedGames:int, newGames:int, insertedGames:int, removedGames:int}
+ */
+function append_new_games_to_existing_database(array $allOwnedGames): array {
+    ensure_bgg_sync_dependencies();
+
+    $activeDbPath = __DIR__ . '/../bgg.db';
+    if (!is_file($activeDbPath)) {
+        throw new RuntimeException('active_db_missing');
+    }
+
+    $existingBggIds = get_existing_bgg_ids_from_database();
+    $newGames = filter_games_not_in_database($allOwnedGames, $existingBggIds);
+    $collectionBggIds = array_values(array_unique(array_map(static function (array $game): int {
+        return (int)($game['bggId'] ?? 0);
+    }, $allOwnedGames)));
+    $collectionBggIds = array_values(array_filter($collectionBggIds, static function (int $bggId): bool {
+        return $bggId > 0;
+    }));
+    $removedBggIds = get_bgg_ids_removed_from_collection($existingBggIds, $collectionBggIds);
+
+    if ($newGames === [] && $removedBggIds === []) {
+        return [
+            'fetchedGames' => count($allOwnedGames),
+            'newGames' => 0,
+            'insertedGames' => 0,
+            'removedGames' => 0,
+        ];
+    }
+
+    $db = new SQLite3($activeDbPath);
+    $db->busyTimeout(3000);
+    $db->exec('PRAGMA journal_mode=WAL;');
+    $db->exec('PRAGMA synchronous=NORMAL;');
+
+    $insertedGames = 0;
+    $removedGames = 0;
+    try {
+        $db->exec('BEGIN TRANSACTION');
+        if ($newGames !== []) {
+            $insertedGames = insert_games($db, $newGames, gmdate('c'), 0);
+        }
+
+        if ($removedBggIds !== []) {
+            $deleteStmt = $db->prepare('DELETE FROM games WHERE bggId = :bggId');
+            if (!$deleteStmt) {
+                throw new RuntimeException('games_delete_prepare_failed');
+            }
+
+            $totalRemovedCandidates = count($removedBggIds);
+            foreach ($removedBggIds as $index => $bggId) {
+                $deleteStmt->bindValue(':bggId', (int)$bggId, SQLITE3_INTEGER);
+                if ($deleteStmt->execute() === false) {
+                    throw new RuntimeException('games_delete_execute_failed');
+                }
+
+                if ($db->changes() > 0) {
+                    $removedGames += 1;
+                }
+
+                if ((($index + 1) % 10) === 0 || ($index + 1) === $totalRemovedCandidates) {
+                    write_sync_progress([
+                        'state' => 'imported',
+                        'phase' => 'cleanup_games',
+                        'message' => 'Removing games no longer in collection...',
+                        'currentGames' => $index + 1,
+                        'totalGames' => $totalRemovedCandidates,
+                        'currentPlays' => 0,
+                        'totalPlays' => 0,
+                    ]);
+                }
+            }
+        }
+
+        $db->exec('COMMIT');
+    } catch (Throwable $exception) {
+        $db->exec('ROLLBACK');
+        $db->close();
+        throw $exception;
+    }
+
+    $db->close();
+
+    return [
+        'fetchedGames' => count($allOwnedGames),
+        'newGames' => count($newGames),
+        'insertedGames' => $insertedGames,
+        'removedGames' => $removedGames,
+    ];
+}
+
 function insert_games(SQLite3 $db, array $games, string $syncedAt, int $totalPlays): int {
     $stmt = $db->prepare('INSERT INTO games (
         id, name, bggYear, minPlayerCount, maxPlayerCount, best_with, recommended_with, designer, rating, average_rating, modificationDate,

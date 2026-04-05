@@ -18,6 +18,11 @@ This is just a toy project to learn different things for me. Hence there are ton
 3. Run `Get Games`, then `Get Game Metadata`, then `Get Plays + Build DB`.
 4. The backend fetches data for the BGG user configured via `BGSTATS_BGG_USERNAME` (env var or `local_config.php`) and publishes a rebuilt `dist/bgg.db`.
 
+For incremental updates after a full sync, use the Delta Sync card:
+- `Get New Games`: fetches current owned collection, inserts missing games, and removes games that are no longer in the collection (no DB rebuild)
+- `Game Metadata Delta Sync`: fills missing metadata for games in the existing DB
+- `Get Last Plays`: appends only recent plays not already stored
+
 ## Data Source
 
 The application no longer supports BGStats JSON upload/import.
@@ -41,6 +46,7 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 - `dist/api/sync_bgg_games.php`: stage 1 — fetch collection from BGG
 - `dist/api/sync_bgg_metadata.php`: stage 2 — enrich games with thing metadata
 - `dist/api/sync_bgg_plays.php`: stage 3 — fetch all plays and rebuild `bgg.db`
+- `dist/api/sync_bgg_new_games.php`: delta stage — append new owned games into existing `bgg.db`
 - `dist/api/sync_bgg_status.php`: sync progress endpoint
 - `dist/api/bgg_sync_service.php`: fetch + transform + SQLite rebuild
 - `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)
