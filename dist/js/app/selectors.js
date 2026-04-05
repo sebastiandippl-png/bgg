@@ -348,28 +348,28 @@ window.BGStatsSelectors = (function createSelectorModule() {
             return new Date(game.lastPlayed) < oneYearAgo;
         });
 
-        const complexGames = eligibleGames.filter(game => game.minPlayTime > 30 && game.maxPlayTime > 90);
-        const mediumGames = eligibleGames.filter(game => game.minPlayTime > 30 && game.maxPlayTime > 60 && game.maxPlayTime <= 90);
-        const lightGames = eligibleGames.filter(game => !(game.minPlayTime > 30 && game.maxPlayTime > 60));
+        const complexGames = eligibleGames.filter(game => Number(game.weight) > 3);
+        const mediumGames = eligibleGames.filter(game => Number(game.weight) <= 3 && Number(game.weight) > 1.8);
+        const lightGames = eligibleGames.filter(game => Number(game.weight) <= 1.8);
 
         return {
             sortConfig: state.sort.nextplay,
             groups: [
                 {
                     id: 'complex',
-                    title: 'Long, Complex & Gamers Games (min duration > 30 & max duration> 90)',
+                    title: 'Long, Complex & Gamers Games (weight > 3)',
                     titleClass: 'text-blue-400',
                     games: sortByLongestNotPlayed(complexGames)
                 },
                 {
                     id: 'medium',
-                    title: 'Mid-Length Games (min duration > 30 & max duration> 60)',
+                    title: 'Mid-Weight Games (weight > 1.8 and ≤ 3)',
                     titleClass: 'text-green-400',
                     games: sortByLongestNotPlayed(mediumGames)
                 },
                 {
                     id: 'light',
-                    title: 'Casual, Simple & Short Games (max duration ≤ 60)',
+                    title: 'Casual, Simple & Short Games (weight ≤ 1.8)',
                     titleClass: 'text-yellow-400',
                     games: sortByLongestNotPlayed(lightGames)
                 }
