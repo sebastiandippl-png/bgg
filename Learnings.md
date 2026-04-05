@@ -239,6 +239,16 @@ CREATE TABLE games (
 
 **Code Location**: `ionos_deploy.sh`
 
+### Brettspielpreise Cache Can Be Reused Across Tabs
+
+**Observation**: `dist/api/get_game_price.php` already performs a 24-hour file cache per BGG ID and sitename.
+
+**Implication**:
+- Reuse the same endpoint from multiple tabs instead of adding separate price-fetch backends.
+- UI tabs can request prices independently while upstream traffic stays bounded by the local cache TTL.
+
+**Code Location**: `dist/api/get_game_price.php`
+
 ### Issue: Plays Count Mismatch (3763 vs 3972)
 
 **Root Cause**: Frontend `loadPlays()` used INNER JOIN, silently dropping 209 unmatched plays.

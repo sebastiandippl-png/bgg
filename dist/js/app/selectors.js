@@ -754,6 +754,26 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function getWantToBuyViewModel(state) {
+        return state.games
+            .filter(game => game && game.wantToBuy)
+            .sort((first, second) => {
+                const firstRating = Number(first.averageRating || 0);
+                const secondRating = Number(second.averageRating || 0);
+                if (secondRating !== firstRating) {
+                    return secondRating - firstRating;
+                }
+
+                const firstYear = Number(first.year || 0);
+                const secondYear = Number(second.year || 0);
+                if (secondYear !== firstYear) {
+                    return secondYear - firstYear;
+                }
+
+                return String(first.name || '').localeCompare(String(second.name || ''));
+            });
+    }
+
     function normalizePlayerName(value) {
         return String(value || '').trim().toLowerCase();
     }
@@ -957,6 +977,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
         getNextplayViewModel,
         getLastRecordedPlayDate,
         getBggSchemaViewModel,
+        getWantToBuyViewModel,
         getGameStatsViewModel,
         getPlayerStatsViewModel
     };

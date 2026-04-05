@@ -39,7 +39,9 @@ The `OnceUpon` tab shows three day-based cards with full play details (duration,
 - played today one year ago
 - played today 5 years ago
 
-Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`). Opening a URL with one of these hashes loads that tab directly.
+The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, and a cached best-price lookup from Brettspielpreise.
+
+Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
 ## Project Structure
 
@@ -63,4 +65,5 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 - Keep `BGSTATS_BGG_USERNAME`, `BGSTATS_BGG_API_KEY`, `BGSTATS_GOOGLE_CLIENT_ID`, and `BGSTATS_ADMIN_EMAIL` server-side (env vars or `dist/api/local_config.php`).
 - Deploy with `./ionos_deploy.sh` from the project root (or any directory). The script now resolves `dist/` relative to the script location.
 - The deploy uses checksum comparison and itemized rsync output, so changed assets like `dist/js/tabs/plays.js` are reliably uploaded and visible in deploy logs.
-- Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260402` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.
+- Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260405` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.
+- Brettspielpreise lookups are served through `dist/api/get_game_price.php` and cached locally for 24 hours, so repeated visits to Game Stats and WantToBuy do not re-hit the upstream API for the same game during that window.

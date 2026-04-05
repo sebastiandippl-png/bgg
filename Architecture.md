@@ -124,10 +124,17 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 
 ### Tab Deep Links
 
-- Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#schema`).
+- Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`, `#gamestats`, `#playerstats`, `#admin`).
 - On app init, dashboard reads the current hash and sets the initial active tab.
 - On tab switch, dashboard updates the hash so links can be shared/bookmarked.
 - `hashchange` handling keeps browser back/forward navigation in sync with the active tab.
+
+### WantToBuy Tab Flow
+
+- Selector: `getWantToBuyViewModel(state)` in `dist/js/app/selectors.js`
+- Renderer: `renderWantToBuyTab(...)` in `dist/js/tabs/wanttobuy.js`
+- Data source: `state.games` filtered by `wantToBuy === true`
+- Price lookup: each card calls `dist/api/get_game_price.php`, which reuses the existing 24-hour Brettspielpreise cache
 
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html
