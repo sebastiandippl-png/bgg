@@ -1101,13 +1101,9 @@ function append_recent_plays_to_existing_database(array $plays, array $players):
                 continue;
             }
 
-            $scoresRaw = (string)($play['playerScores'] ?? '');
-            if ($scoresRaw === '') {
-                continue;
-            }
-
-            $scores = json_decode($scoresRaw, true);
-            if (!is_array($scores)) {
+            $rawData = json_decode((string)($play['rawJson'] ?? ''), true);
+            $scores = is_array($rawData) ? ($rawData['players'] ?? []) : [];
+            if (!is_array($scores) || empty($scores)) {
                 continue;
             }
 
@@ -1654,13 +1650,9 @@ function insert_play_players(SQLite3 $db, array $plays): int {
             continue;
         }
 
-        $scoresRaw = (string)($play['playerScores'] ?? '');
-        if ($scoresRaw === '') {
-            continue;
-        }
-
-        $scores = json_decode($scoresRaw, true);
-        if (!is_array($scores)) {
+        $rawData = json_decode((string)($play['rawJson'] ?? ''), true);
+        $scores = is_array($rawData) ? ($rawData['players'] ?? []) : [];
+        if (!is_array($scores) || empty($scores)) {
             continue;
         }
 
