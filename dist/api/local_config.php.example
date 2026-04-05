@@ -10,4 +10,6 @@ return [
     'BGSTATS_ADMIN_EMAIL' => '',
     // Optional: comma-separated list, e.g. 'https://dashboard.example.com,https://www.example.com'
     'BGSTATS_ALLOWED_ORIGINS' => '',
+    //URL where this app is hosted
+    'URL_HOSTING' => '',
 ];

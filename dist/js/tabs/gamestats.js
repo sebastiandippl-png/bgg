@@ -350,6 +350,9 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         if (game.averageRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Average Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.averageRating) + '</dd></div>'; }
         if (game.geekRating) { gameInfoRows += '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Geek Rating</dt><dd class="text-gray-200 text-right">' + fmt(game.geekRating) + '</dd></div>'; }
 
+        var priceRowId = 'gamestats-price-row-' + escapeHTML(String(game.bggId || ''));
+        gameInfoRows += '<div id="' + priceRowId + '" class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Best Price</dt><dd class="text-gray-400 text-right text-xs italic">loading…</dd></div>';
+
         var gameInfoBlock = '<div class="rounded-lg border border-gray-700 p-4">'
             + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🎲 Game Info</h3>'
             + '<dl class="space-y-2 text-sm">' + gameInfoRows + '</dl>'
@@ -472,4 +475,45 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
     }
 
     container.innerHTML = renderDetailView(gameStatsData);
+
+    // Async: fetch price for the selected game
+    var bggIdForPrice = gameStatsData && gameStatsData.game && gameStatsData.game.bggId
+        ? String(gameStatsData.game.bggId)
+        : null;
+    if (bggIdForPrice) {
+        var priceRowId = 'gamestats-price-row-' + bggIdForPrice;
+        fetch('api/get_game_price.php?bgg_id=' + encodeURIComponent(bggIdForPrice))
+            .then(function (res) { return res.json(); })
+            .then(function (json) {
+                var row = document.getElementById(priceRowId);
+                if (!row) { return; }
+                if (!json.success || !json.price) {
+                    row.querySelector('dd').innerHTML = '<span class="text-gray-600">\u2014</span>';
+                    return;
+                }
+                var p = json.price;
+                var priceText = (p.price !== null && p.price !== undefined)
+                    ? Number(p.price).toFixed(2) + '\u00a0' + (p.currency || 'EUR')
+                    : '\u2014';
+                var stockBadge = '';
+                if (p.stock === 'Y') {
+                    stockBadge = '<span class="ml-1 text-emerald-400 text-xs">in stock</span>';
+                } else if (p.stock === 'N') {
+                    stockBadge = '<span class="ml-1 text-rose-400 text-xs">out of stock</span>';
+                } else if (p.stock === 'P') {
+                    stockBadge = '<span class="ml-1 text-amber-400 text-xs">pre-order</span>';
+                }
+                var linkUrl = p.item_url || null;
+                var priceHtml = linkUrl
+                    ? '<a href="' + linkUrl.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">' + priceText + '</a>'
+                    : '<span class="text-gray-200">' + priceText + '</span>';
+                var sourceUrl = p.item_url || 'https://brettspielpreise.de';
+                row.querySelector('dd').innerHTML = priceHtml + stockBadge
+                    + '<span class="block text-[10px] text-gray-600 mt-0.5">via <a href="' + sourceUrl.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" class="hover:text-gray-400 underline">brettspielpreise.de</a></span>';
+            })
+            .catch(function () {
+                var row = document.getElementById(priceRowId);
+                if (row) { row.querySelector('dd').innerHTML = '<span class="text-gray-600">\u2014</span>'; }
+            });
+    }
 };
