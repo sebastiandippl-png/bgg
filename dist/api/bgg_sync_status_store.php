@@ -32,6 +32,11 @@ function read_bgg_sync_status(): array {
     ];
 }
 
+function is_sync_running(): bool {
+    $status = read_bgg_sync_status();
+    return in_array($status['state'] ?? 'idle', ['queued', 'polling', 'imported'], true);
+}
+
 /**
  * @param array<string, mixed> $payload
  */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/bgg_sync_service.php';
 require_once __DIR__ . '/bgg_sync_status_store.php';
+require_once __DIR__ . '/bgg_sync_log_store.php';
 
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
@@ -23,6 +24,14 @@ if ($requestedWith !== 'xmlhttprequest') {
 }
 
 require_admin_json();
+
+if (is_sync_running()) {
+    http_response_code(409);
+    echo json_encode(['success' => false, 'error' => 'sync_already_running']);
+    exit;
+}
+
+$syncStartedAt = gmdate('c');
 
 if (function_exists('set_time_limit')) {
     @set_time_limit(0);
@@ -66,6 +75,12 @@ try {
         'totalPlays' => 0,
     ]);
 
+    append_sync_log_entry('new_games', $syncStartedAt, gmdate('c'), true, [
+        'insertedGames'    => $result['insertedGames'],
+        'removedGames'     => $result['removedGames'],
+        'updatedStatusGames' => $result['updatedStatusGames'],
+    ]);
+
     echo json_encode([
         'success' => true,
         'step' => 'new_games',
@@ -89,6 +104,10 @@ try {
         'phase' => 'error',
         'message' => $code,
         'username' => get_bgg_sync_username(),
+    ]);
+
+    append_sync_log_entry('new_games', $syncStartedAt, gmdate('c'), false, [
+        'error' => $code,
     ]);
 
     http_response_code(500);
