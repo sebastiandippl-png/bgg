@@ -426,10 +426,29 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 dateLabel: toDateKey(fiveYearsAgo),
                 targetDateKey: toDateKey(fiveYearsAgo),
                 titleClass: 'text-amber-300'
+            },
+            {
+                id: 'custom_date',
+                title: 'Choose a Date',
+                dateLabel: 'Pick any date to see plays',
+                targetDateKey: null,
+                titleClass: 'text-green-300',
+                isCustom: true
             }
         ];
 
         const cards = dayCards.map(card => {
+            if (card.isCustom) {
+                return {
+                    id: card.id,
+                    title: card.title,
+                    dateLabel: card.dateLabel,
+                    titleClass: card.titleClass,
+                    isCustom: true,
+                    plays: []
+                };
+            }
+            
             const plays = state.plays
                 .filter(play => String(play.Date || '') === card.targetDateKey)
                 .sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0))
@@ -447,8 +466,14 @@ window.BGStatsSelectors = (function createSelectorModule() {
             };
         });
 
+        const allPlays = state.plays.map(play => ({
+            ...play,
+            game: gamesById.get(play.gameId) || null
+        }));
+
         return {
-            cards
+            cards,
+            allPlays
         };
     }
 

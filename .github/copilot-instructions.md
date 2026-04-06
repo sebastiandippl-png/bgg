@@ -16,7 +16,7 @@ The BGG Dashboard is a lightweight board game collection tracker that syncs data
 
 - always keep README.md up to date using best practices for readme files
 - always keep Architecture.md when introducing new architecture patterns or changeing existing patterns
-- always keep Learnings.md up to date if we learn something that should be remembered while implementing the code
+- always keep Learnings.md Architecture.md, README.md up to date if we learn something that should be remembered while implementing the code
 - check if any of the new or renamed files need to be added to gitignore
 - all visible text on UI should be english
-- use Architecture.md, README.md and Learnings.md for context
+- always check for webbrowser and mobile friendly design and code 

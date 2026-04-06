@@ -122,19 +122,93 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
         return cardsHTML;
     }
 
+    function renderCustomDatePicker() {
+        return `
+            <div class="px-4 py-4">
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">📅</span>
+                    <input type="text" id="onceupon-custom-date-input" placeholder="Pick a date…" readonly
+                        class="w-full pl-9 pr-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-500 cursor-pointer focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400/40 transition-colors">
+                </div>
+                <p class="text-xs text-gray-600 mt-2">Only dates with recorded plays are selectable.</p>
+            </div>
+            <div id="onceupon-custom-date-results">
+                <div class="px-4 pb-4 text-gray-500 italic text-sm">Pick a date above to see games played.</div>
+            </div>
+        `;
+    }
+
     const html = `
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            ${cards.map(card => `
-                <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
-                    <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/70">
-                        <h3 class="font-semibold ${card.titleClass}">${escapeHTML(card.title)}</h3>
-                        <p class="text-xs text-gray-500 mt-1">${escapeHTML(card.dateLabel)}</p>
-                    </div>
-                    ${renderPlayCards(card.plays)}
-                </section>
-            `).join('')}
+            ${cards.map(card => {
+                if (card.isCustom) {
+                    return `
+                        <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/70">
+                                <h3 class="font-semibold ${card.titleClass}">${escapeHTML(card.title)}</h3>
+                                <p class="text-xs text-gray-500 mt-1">${escapeHTML(card.dateLabel)}</p>
+                            </div>
+                            ${renderCustomDatePicker()}
+                        </section>
+                    `;
+                }
+                return `
+                    <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/70">
+                            <h3 class="font-semibold ${card.titleClass}">${escapeHTML(card.title)}</h3>
+                            <p class="text-xs text-gray-500 mt-1">${escapeHTML(card.dateLabel)}</p>
+                        </div>
+                        ${renderPlayCards(card.plays)}
+                    </section>
+                `;
+            }).join('')}
         </div>
     `;
 
     document.getElementById(targetId).innerHTML = html;
+
+    const customDateInput = document.getElementById('onceupon-custom-date-input');
+    const customDateResults = document.getElementById('onceupon-custom-date-results');
+
+    if (customDateInput && typeof window.flatpickr === 'function') {
+        const availableDates = onceUponData && Array.isArray(onceUponData.allPlays)
+            ? [...new Set(onceUponData.allPlays.map(p => String(p.Date || '')).filter(Boolean))]
+            : [];
+        const availableDateSet = new Set(availableDates);
+
+        window.flatpickr(customDateInput, {
+            dateFormat: 'Y-m-d',
+            enable: availableDates,
+            disableMobile: true,
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+                const d = dayElem.dateObj;
+                if (!d) return;
+                const isPrevNext = dayElem.classList.contains('prevMonthDay') || dayElem.classList.contains('nextMonthDay');
+                if (isPrevNext) return;
+                const key = d.getFullYear() + '-'
+                    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+                    + String(d.getDate()).padStart(2, '0');
+                if (availableDateSet.has(key)) {
+                    dayElem.classList.add('fp-has-plays');
+                } else {
+                    dayElem.classList.add('fp-no-plays');
+                }
+            },
+            onChange: function (selectedDates, selectedDate) {
+                if (!selectedDate) return;
+
+                const selectedPlays = [];
+                if (onceUponData && Array.isArray(onceUponData.allPlays)) {
+                    onceUponData.allPlays.forEach(play => {
+                        if (String(play.Date || '') === selectedDate) {
+                            selectedPlays.push(play);
+                        }
+                    });
+                }
+
+                selectedPlays.sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0));
+                customDateResults.innerHTML = renderPlayCards(selectedPlays);
+            }
+        });
+    }
 };
