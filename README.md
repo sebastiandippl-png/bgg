@@ -39,7 +39,13 @@ The `OnceUpon` tab shows three day-based cards with full play details (duration,
 - played today one year ago
 - played today 5 years ago
 
-The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, and a cached best-price lookup from Brettspielpreise.
+The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, the cached Brettspielpreise best offer, and a compact top-5 Funtainment price list per game.
+
+WantToBuy price lookup behavior:
+- Uses `dist/api/get_game_price.php` for Brettspielpreise best offer (24-hour cache)
+- Uses `dist/api/get_funtainment_prices.php`
+- Caches responses locally for 24 hours (once per day per normalized game name)
+- If a game name contains `:`, only the part before `:` is used for search (example: `Concordia: Venus` searches for `Concordia`)
 
 Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
@@ -55,6 +61,7 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 - `dist/api/bgg_sync_service.php`: fetch + transform + SQLite rebuild
 - `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)
 - `dist/api/get_db.php`: serves active `bgg.db`
+- `dist/api/get_funtainment_prices.php`: top-5 Funtainment search and product meta extraction with 24-hour cache
 - `dist/bgg.db`: active SQLite database used by the dashboard
 - `dist/db_storage/`: backups, sync status, and cache files
 
@@ -65,5 +72,6 @@ Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextpl
 - Keep `BGSTATS_BGG_USERNAME`, `BGSTATS_BGG_API_KEY`, `BGSTATS_GOOGLE_CLIENT_ID`, and `BGSTATS_ADMIN_EMAIL` server-side (env vars or `dist/api/local_config.php`).
 - Deploy with `./ionos_deploy.sh` from the project root (or any directory). The script now resolves `dist/` relative to the script location.
 - The deploy uses checksum comparison and itemized rsync output, so changed assets like `dist/js/tabs/plays.js` are reliably uploaded and visible in deploy logs.
-- Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260405` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.
-- Brettspielpreise lookups are served through `dist/api/get_game_price.php` and cached locally for 24 hours, so repeated visits to Game Stats and WantToBuy do not re-hit the upstream API for the same game during that window.
+- Frontend assets in `dist/bgstats-dashboard.html` use `?v=20260406` cache-busting query params. Bump this version when you need to force clients/CDNs to fetch fresh JS/CSS.
+- Brettspielpreise lookups are served through `dist/api/get_game_price.php` and cached locally for 24 hours (used in Game Stats).
+- Funtainment top-5 lookups for WantToBuy are served through `dist/api/get_funtainment_prices.php` and cached locally for 24 hours.

@@ -72,9 +72,11 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         var safePlaceholderUrl = escapeHTML(placeholderSvg);
         var statsUrl = game.id ? '#gamestats/' + encodeURIComponent(String(game.id)) : '#';
         var bggUrl = game.bggId ? 'https://boardgamegeek.com/boardgame/' + escapeHTML(String(game.bggId)) + '/' : null;
-        var priceRowId = 'wanttobuy-price-row-' + escapeHTML(String(game.bggId || game.id || ''));
+        var funtainmentRowId = 'wanttobuy-funtainment-row-' + escapeHTML(String(game.bggId || game.id || ''));
+        var brettspielpreiseRowId = 'wanttobuy-bsp-row-' + escapeHTML(String(game.bggId || game.id || ''));
         var priceRow = showPrice !== false
-            ? '<div class="flex justify-between gap-3" id="' + priceRowId + '"><dt class="text-gray-500">Best Price</dt><dd class="text-gray-400 text-right text-xs italic">loading...</dd></div>'
+            ? '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3" id="' + brettspielpreiseRowId + '"><dt class="text-gray-500 shrink-0 sm:w-20">BSP Best</dt><dd class="min-w-0 w-full sm:w-auto text-gray-400 sm:text-right text-xs italic">loading...</dd></div>'
+                + '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3" id="' + funtainmentRowId + '"><dt class="text-gray-500 shrink-0 sm:w-20">Funtainment</dt><dd class="min-w-0 w-full sm:w-auto text-gray-400 sm:text-right text-xs italic">loading top 5...</dd></div>'
             : '';
 
         return '<article class="rounded-lg border border-gray-700 bg-gray-900/40 p-3 shadow-sm" data-wanttobuy-card data-sort-price="-1" data-sort-name="' + escapeHTML(String(game.name || '')) + '">'
@@ -106,7 +108,29 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '</article>';
     }
 
-    function applyPriceResult(rowId, json) {
+    function formatMoney(value, currency) {
+        if (!Number.isFinite(value)) {
+            return '-';
+        }
+        return value.toFixed(2).replace('.', ',') + ' ' + (currency || 'EUR');
+    }
+
+    function updateCardSortPrice(card, candidatePrice) {
+        if (!card) {
+            return;
+        }
+        var currentValue = Number(card.getAttribute('data-sort-price'));
+        var nextValue = Number.isFinite(candidatePrice) && candidatePrice >= 0 ? candidatePrice : -1;
+        if (!Number.isFinite(currentValue) || currentValue < 0) {
+            card.setAttribute('data-sort-price', String(nextValue));
+            return;
+        }
+        if (nextValue >= 0) {
+            card.setAttribute('data-sort-price', String(Math.min(currentValue, nextValue)));
+        }
+    }
+
+    function applyFuntainmentPriceResult(rowId, json) {
         var row = document.getElementById(rowId);
         if (!row) {
             return;
@@ -117,8 +141,59 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             return;
         }
 
+        var card = row.closest('[data-wanttobuy-card]');
+        if (!json.success || !Array.isArray(json.offers) || json.offers.length === 0) {
+            priceCell.innerHTML = '<span class="text-gray-600">-</span>';
+            sortCardsByPrice();
+            return;
+        }
+
+        var offers = json.offers.slice(0, 5);
+        var numericPrices = offers
+            .map(function (offer) { return Number(offer && offer.price); })
+            .filter(function (value) { return Number.isFinite(value); });
+        var bestNumericPrice = numericPrices.length ? Math.min.apply(Math, numericPrices) : -1;
+
+        updateCardSortPrice(card, bestNumericPrice);
+
+        var compactLines = offers.map(function (offer, index) {
+            var priceValue = Number(offer && offer.price);
+            var moneyText = formatMoney(priceValue, offer && offer.currency ? offer.currency : 'EUR');
+            var titleText = offer && offer.title ? String(offer.title) : 'Untitled';
+            var safeTitle = escapeHTML(titleText);
+            var safeLink = offer && offer.link ? String(offer.link).replace(/"/g, '&quot;') : '';
+
+            var left = '<div class="min-w-0 w-full sm:w-auto sm:flex-1 flex items-start gap-1.5">'
+                + '<span class="text-gray-500 w-4 shrink-0">' + String(index + 1) + '.</span>'
+                + '<a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="min-w-0 flex-1 break-words text-gray-300 hover:text-blue-300" title="' + safeTitle + '">' + safeTitle + '</a>'
+                + '</div>';
+            var right = '<a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="shrink-0 self-start sm:self-auto whitespace-nowrap text-blue-300 hover:text-blue-200 tabular-nums">' + escapeHTML(moneyText) + '</a>';
+
+            return '<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-1.5">' + left + right + '</div>';
+        }).join('');
+
+        var cacheHint = json.cached ? 'cache' : 'live';
+        priceCell.innerHTML = '<div class="space-y-1 text-[11px] leading-4 w-full">'
+            + compactLines
+            + '<div class="text-[10px] text-gray-600 pt-0.5">via <a href="https://funtainment.de" target="_blank" rel="noopener noreferrer" class="hover:text-gray-400 underline">funtainment.de</a> (' + cacheHint + ')</div>'
+            + '</div>';
+        sortCardsByPrice();
+    }
+
+    function applyBrettspielpreiseResult(rowId, json) {
+        var row = document.getElementById(rowId);
+        if (!row) {
+            return;
+        }
+
+        var priceCell = row.querySelector('dd');
+        if (!priceCell) {
+            return;
+        }
+
+        var card = row.closest('[data-wanttobuy-card]');
+
         if (!json.success || !json.price) {
-            row.closest('[data-wanttobuy-card]').setAttribute('data-sort-price', '-1');
             priceCell.innerHTML = '<span class="text-gray-600">-</span>';
             sortCardsByPrice();
             return;
@@ -126,9 +201,12 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
 
         var price = json.price;
         var numericPrice = Number(price.price);
+        updateCardSortPrice(card, numericPrice);
+
         var priceText = (price.price !== null && price.price !== undefined)
             ? Number(price.price).toFixed(2) + ' ' + (price.currency || 'EUR')
             : '-';
+
         var stockBadge = '';
         if (price.stock === 'Y') {
             stockBadge = '<span class="ml-1 text-emerald-400 text-xs">in stock</span>';
@@ -142,16 +220,43 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         var priceHtml = linkUrl
             ? '<a href="' + linkUrl.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">' + priceText + '</a>'
             : '<span class="text-gray-200">' + priceText + '</span>';
-        var sourceUrl = price.item_url || 'https://brettspielpreise.de';
-
-        row.closest('[data-wanttobuy-card]').setAttribute('data-sort-price', Number.isFinite(numericPrice) ? String(numericPrice) : '-1');
 
         priceCell.innerHTML = priceHtml + stockBadge
-            + '<span class="block text-[10px] text-gray-600 mt-0.5">via <a href="' + sourceUrl.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" class="hover:text-gray-400 underline">brettspielpreise.de</a></span>';
+            + '<span class="block text-[10px] text-gray-600 mt-0.5">via <a href="https://brettspielpreise.de" target="_blank" rel="noopener noreferrer" class="hover:text-gray-400 underline">brettspielpreise.de</a></span>';
         sortCardsByPrice();
     }
 
-    function loadPrices(items) {
+    function loadFuntainmentPrices(items) {
+        var queue = items.filter(function (game) {
+            return game && game.name;
+        }).slice();
+        var maxConcurrent = 4;
+        var inFlight = 0;
+
+        function scheduleNext() {
+            while (inFlight < maxConcurrent && queue.length > 0) {
+                (function (game) {
+                    var rowId = 'wanttobuy-funtainment-row-' + String(game.bggId || game.id || '');
+                    var gameName = String(game.name || '').trim();
+                    inFlight += 1;
+                    fetch('api/get_funtainment_prices.php?game_name=' + encodeURIComponent(gameName))
+                        .then(function (response) { return response.json(); })
+                        .then(function (json) { applyFuntainmentPriceResult(rowId, json); })
+                        .catch(function () {
+                            applyFuntainmentPriceResult(rowId, { success: false });
+                        })
+                        .finally(function () {
+                            inFlight -= 1;
+                            scheduleNext();
+                        });
+                })(queue.shift());
+            }
+        }
+
+        scheduleNext();
+    }
+
+    function loadBrettspielpreisePrices(items) {
         var queue = items.filter(function (game) {
             return game && game.bggId;
         }).slice();
@@ -161,13 +266,13 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         function scheduleNext() {
             while (inFlight < maxConcurrent && queue.length > 0) {
                 (function (game) {
-                    var rowId = 'wanttobuy-price-row-' + String(game.bggId || game.id || '');
+                    var rowId = 'wanttobuy-bsp-row-' + String(game.bggId || game.id || '');
                     inFlight += 1;
                     fetch('api/get_game_price.php?bgg_id=' + encodeURIComponent(String(game.bggId)))
                         .then(function (response) { return response.json(); })
-                        .then(function (json) { applyPriceResult(rowId, json); })
+                        .then(function (json) { applyBrettspielpreiseResult(rowId, json); })
                         .catch(function () {
-                            applyPriceResult(rowId, { success: false });
+                            applyBrettspielpreiseResult(rowId, { success: false });
                         })
                         .finally(function () {
                             inFlight -= 1;
@@ -190,12 +295,9 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">'
             + '<div>'
             + '<h2 class="text-lg font-semibold text-amber-200">WantToBuy</h2>'
-            + '<p class="text-sm text-amber-100/80">Games marked want_to_buy, with cached price data.</p>'
+            + '<p class="text-sm text-amber-100/80">Shows Brettspielpreise best offer plus top 5 Funtainment hits per game.</p>'
             + '</div>'
             + '<div class="text-sm text-amber-300">' + escapeHTML(String(games.length)) + ' games</div>'
-            + '</div>'
-            + '<p class="text-sm text-amber-100/80">More Prices: <a href="https://www.brettspiel-angebote.de/merkliste/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">BrettspielAngebote.de</a></p>'
-            + '</div>'
             + '</div>'
             + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-8" data-wanttobuy-grid>'
             + games.map(function(g) { return renderGameCard(g, true); }).join('')
@@ -211,14 +313,13 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '</div>'
             + '<div class="text-sm text-cyan-300">' + escapeHTML(String(wantToPlayGames.length)) + ' games</div>'
             + '</div>'
-            + '</div>'
             + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3" data-wanttoplay-grid>'
-            + wantToPlayGames.map(function(g) { return renderGameCard(g, true); }).join('')
+            + wantToPlayGames.map(function(g) { return renderGameCard(g, false); }).join('')
             + '</div>'
         : '';
 
     container.innerHTML = buySection + playSection;
 
-    loadPrices(games);
-    loadPrices(wantToPlayGames);
+    loadBrettspielpreisePrices(games);
+    loadFuntainmentPrices(games);
 };

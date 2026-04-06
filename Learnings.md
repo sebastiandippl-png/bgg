@@ -249,6 +249,27 @@ CREATE TABLE games (
 
 **Code Location**: `dist/api/get_game_price.php`
 
+### WantToBuy Uses Funtainment Top-5 With Daily Name Cache
+
+**Requirement**: WantToBuy should show multiple compact offers, not only one best price.
+
+**Implementation**:
+- Added `dist/api/get_funtainment_prices.php`.
+- Endpoint queries `https://funtainment.de/suggest?search=<name>` and takes up to 5 `search-suggest-product js-result` links.
+- For each result page, extract:
+    - `product:price:amount`
+    - `product:price:currency`
+    - `product:product_link`
+
+**Cache Strategy**:
+- Cache key is derived from normalized game name, not BGG ID.
+- Normalization rule: if game name contains `:`, search only with the part before `:`.
+- Cache TTL is 24 hours to avoid repeated upstream hits while keeping prices reasonably fresh.
+
+**Code Locations**:
+- Backend: `dist/api/get_funtainment_prices.php`
+- Frontend tab rendering: `dist/js/tabs/wanttobuy.js`
+
 ### Issue: Plays Count Mismatch (3763 vs 3972)
 
 **Root Cause**: Frontend `loadPlays()` used INNER JOIN, silently dropping 209 unmatched plays.

@@ -134,7 +134,9 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 - Selector: `getWantToBuyViewModel(state)` in `dist/js/app/selectors.js`
 - Renderer: `renderWantToBuyTab(...)` in `dist/js/tabs/wanttobuy.js`
 - Data source: `state.games` filtered by `wantToBuy === true`
-- Price lookup: each card calls `dist/api/get_game_price.php`, which reuses the existing 24-hour Brettspielpreise cache
+- Price lookup: each WantToBuy card calls both `dist/api/get_game_price.php` (Brettspielpreise best offer) and `dist/api/get_funtainment_prices.php` (top 5 compact title/price/link entries)
+- Cache behavior: `get_funtainment_prices.php` stores one file per normalized game name with a 24-hour TTL
+- Search normalization: when a game name includes `:`, only the substring before `:` is used for Funtainment search
 
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html
