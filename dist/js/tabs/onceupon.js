@@ -125,10 +125,16 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
     function renderCustomDatePicker() {
         return `
             <div class="px-4 py-4">
-                <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">📅</span>
-                    <input type="text" id="onceupon-custom-date-input" placeholder="Pick a date…" readonly
-                        class="w-full pl-9 pr-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-500 cursor-pointer focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400/40 transition-colors">
+                <div class="flex items-center gap-2">
+                    <button id="onceupon-prev-day" disabled
+                        class="px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:text-gray-100 hover:bg-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">&lt;</button>
+                    <div class="relative flex-1">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">📅</span>
+                        <input type="text" id="onceupon-custom-date-input" placeholder="Pick a date…" readonly
+                            class="w-full pl-9 pr-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-500 cursor-pointer focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400/40 transition-colors">
+                    </div>
+                    <button id="onceupon-next-day" disabled
+                        class="px-3 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:text-gray-100 hover:bg-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">&gt;</button>
                 </div>
                 <p class="text-xs text-gray-600 mt-2">Only dates with recorded plays are selectable.</p>
             </div>
@@ -169,14 +175,37 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
 
     const customDateInput = document.getElementById('onceupon-custom-date-input');
     const customDateResults = document.getElementById('onceupon-custom-date-results');
+    const prevDayBtn = document.getElementById('onceupon-prev-day');
+    const nextDayBtn = document.getElementById('onceupon-next-day');
 
     if (customDateInput && typeof window.flatpickr === 'function') {
         const availableDates = onceUponData && Array.isArray(onceUponData.allPlays)
             ? [...new Set(onceUponData.allPlays.map(p => String(p.Date || '')).filter(Boolean))]
             : [];
+        const sortedDates = [...availableDates].sort();
         const availableDateSet = new Set(availableDates);
 
-        window.flatpickr(customDateInput, {
+        function renderPlaysForDate(dateStr) {
+            const selectedPlays = [];
+            if (onceUponData && Array.isArray(onceUponData.allPlays)) {
+                onceUponData.allPlays.forEach(play => {
+                    if (String(play.Date || '') === dateStr) {
+                        selectedPlays.push(play);
+                    }
+                });
+            }
+            selectedPlays.sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0));
+            customDateResults.innerHTML = renderPlayCards(selectedPlays);
+        }
+
+        function updateNavButtons(selectedDate) {
+            if (!prevDayBtn || !nextDayBtn) return;
+            const idx = sortedDates.indexOf(selectedDate);
+            prevDayBtn.disabled = idx <= 0;
+            nextDayBtn.disabled = idx < 0 || idx >= sortedDates.length - 1;
+        }
+
+        const fpInstance = window.flatpickr(customDateInput, {
             dateFormat: 'Y-m-d',
             enable: availableDates,
             disableMobile: true,
@@ -196,19 +225,29 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
             },
             onChange: function (selectedDates, selectedDate) {
                 if (!selectedDate) return;
-
-                const selectedPlays = [];
-                if (onceUponData && Array.isArray(onceUponData.allPlays)) {
-                    onceUponData.allPlays.forEach(play => {
-                        if (String(play.Date || '') === selectedDate) {
-                            selectedPlays.push(play);
-                        }
-                    });
-                }
-
-                selectedPlays.sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0));
-                customDateResults.innerHTML = renderPlayCards(selectedPlays);
+                renderPlaysForDate(selectedDate);
+                updateNavButtons(selectedDate);
             }
         });
+
+        if (prevDayBtn) {
+            prevDayBtn.addEventListener('click', function () {
+                const current = customDateInput.value;
+                const idx = sortedDates.indexOf(current);
+                if (idx > 0) {
+                    fpInstance.setDate(sortedDates[idx - 1], true);
+                }
+            });
+        }
+
+        if (nextDayBtn) {
+            nextDayBtn.addEventListener('click', function () {
+                const current = customDateInput.value;
+                const idx = sortedDates.indexOf(current);
+                if (idx >= 0 && idx < sortedDates.length - 1) {
+                    fpInstance.setDate(sortedDates[idx + 1], true);
+                }
+            });
+        }
     }
 };
