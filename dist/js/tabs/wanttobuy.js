@@ -314,7 +314,7 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '<div class="text-sm text-cyan-300">' + escapeHTML(String(wantToPlayGames.length)) + ' games</div>'
             + '</div>'
             + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3" data-wanttoplay-grid>'
-            + wantToPlayGames.map(function(g) { return renderGameCard(g, false); }).join('')
+            + wantToPlayGames.map(function(g) { return renderGameCard(g, true); }).join('')
             + '</div>'
         : '';
 
@@ -322,4 +322,6 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
 
     loadBrettspielpreisePrices(games);
     loadFuntainmentPrices(games);
+    loadBrettspielpreisePrices(wantToPlayGames);
+    loadFuntainmentPrices(wantToPlayGames);
 };
