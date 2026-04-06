@@ -767,6 +767,16 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
             const responseBody = await readJsonResponse(response);
             const payload = responseBody.payload;
+
+            if (response.status === 409) {
+                const info = document.getElementById('db-last-change');
+                if (info) {
+                    info.textContent = 'A sync is already running. Please wait for it to finish.';
+                }
+                renderSyncProgress(null);
+                return;
+            }
+
             const latestStatus = await pollStatus();
 
             if ((latestStatus && latestStatus.state === 'complete' && wasStatusUpdatedForCurrentRun(latestStatus, syncStartedAtMs)) && (!payload || payload.success !== true)) {

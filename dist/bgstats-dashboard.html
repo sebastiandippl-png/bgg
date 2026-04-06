@@ -139,6 +139,24 @@
                             <div id="sync-progress-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 transition-all duration-500 ease-out"></div>
                         </div>
                     </div>
+                    <div class="w-full max-w-3xl mx-auto mt-2">
+                        <h3 class="text-sm sm:text-base font-semibold text-gray-300 mb-2">Sync History</h3>
+                        <div id="sync-log-shell" class="rounded-lg border border-gray-700/60 bg-gray-900/40 overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead>
+                                    <tr class="border-b border-gray-700/60">
+                                        <th class="px-3 py-2 font-semibold text-gray-400 whitespace-nowrap">Type</th>
+                                        <th class="px-3 py-2 font-semibold text-gray-400 whitespace-nowrap">Started</th>
+                                        <th class="px-3 py-2 font-semibold text-gray-400 whitespace-nowrap">Finished</th>
+                                        <th class="px-3 py-2 font-semibold text-gray-400 whitespace-nowrap">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sync-log-body">
+                                    <tr><td colspan="4" class="px-3 py-3 text-gray-500 italic">No sync history yet.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,8 +186,8 @@
     <script src="js/tabs/wanttobuy.js?v=20260406" defer></script>
     <script src="js/tabs/gamestats.js?v=20260404" defer></script>
     <script src="js/tabs/playerstats.js?v=20260404" defer></script>
-    <script src="js/app/dashboard.js?v=20260405" defer></script>
-    <script src="js/tabs/admin.js?v=20260405" defer></script>
+    <script src="js/app/dashboard.js?v=20260406" defer></script>
+    <script src="js/tabs/admin.js?v=20260406" defer></script>
     <script src="script.js?v=20260404" defer></script>
     <script src="js/app/auth-ui.js?v=20260405" defer></script>
 
