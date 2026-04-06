@@ -672,13 +672,14 @@ window.BGStatsDashboard = (function createDashboardModule() {
             }
         };
 
-        const applySyncStatus = function applySyncStatus(status) {
+        const applySyncStatus = function applySyncStatus(status, options = {}) {
+            const force = options && options.force === true;
             const info = document.getElementById('db-last-change');
             if (!info || !status || !status.state) {
                 return;
             }
 
-            if (!wasStatusUpdatedForCurrentRun(status, syncStartedAtMs)) {
+            if (!force && !wasStatusUpdatedForCurrentRun(status, syncStartedAtMs)) {
                 return;
             }
 
@@ -818,6 +819,9 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 state: 'complete',
                 insertedGames: payload.insertedGames || payload.gameCount || 0,
                 insertedPlays: payload.insertedPlays || 0,
+                updatedAt: payload.syncedAt || new Date().toISOString(),
+            }, {
+                force: true
             });
         } catch (error) {
             console.error('BGG sync failed:', error);
