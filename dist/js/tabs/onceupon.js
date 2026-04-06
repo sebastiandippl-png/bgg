@@ -62,6 +62,13 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
         };
     }
 
+    function renderRatingValue(value) {
+        if (value === null || value === undefined || value === '') {
+            return '-';
+        }
+        return escapeHTML(String(value));
+    }
+
     function renderPlayCards(plays) {
         if (plays.length === 0) {
             return '<div class="p-4 text-gray-500 italic">🗂️ No plays recorded on this date.</div>';
@@ -99,6 +106,9 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
             const safePlaceholderUrl = escapeHTML(placeholderSvg);
 
             const gameLink = getGameLinkParts(play);
+            const ratingsMarkup = game
+                ? renderRatingValue(game.averageRating) + ' / ' + renderRatingValue(game.geekRating)
+                : '-';
 
             cardsHTML += `
                 <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
@@ -110,6 +120,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
                         <div class="text-sm text-gray-400 space-y-2">
                             <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
                             <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
+                            <p><span class="text-gray-500">⭐ Avg / Geek:</span> ${ratingsMarkup}</p>
                             <p><span class="text-gray-500">👥 Players:</span> ${coPlayersMarkup}</p>
                             <p><span class="text-gray-500">🏆 Winner:</span> ${winnersMarkup}</p>
                         </div>

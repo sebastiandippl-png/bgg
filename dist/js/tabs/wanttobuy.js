@@ -75,7 +75,7 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         var funtainmentRowId = 'wanttobuy-funtainment-row-' + escapeHTML(String(game.bggId || game.id || ''));
         var brettspielpreiseRowId = 'wanttobuy-bsp-row-' + escapeHTML(String(game.bggId || game.id || ''));
         var priceRow = showPrice !== false
-            ? '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3" id="' + brettspielpreiseRowId + '"><dt class="text-gray-500 shrink-0 sm:w-20">BSP Best</dt><dd class="min-w-0 w-full sm:w-auto text-gray-400 sm:text-right text-xs italic">loading...</dd></div>'
+            ? '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3" id="' + brettspielpreiseRowId + '"><dt class="text-gray-500 shrink-0 sm:w-20">Best Price</dt><dd class="min-w-0 w-full sm:w-auto text-gray-400 sm:text-right text-xs italic">loading...</dd></div>'
                 + '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3" id="' + funtainmentRowId + '"><dt class="text-gray-500 shrink-0 sm:w-20">Funtainment</dt><dd class="min-w-0 w-full sm:w-auto text-gray-400 sm:text-right text-xs italic">loading top 5...</dd></div>'
             : '';
 
@@ -94,8 +94,8 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '</div>'
             + '</div>'
             + '<div class="shrink-0 text-right">'
-            + '<div class="text-[11px] text-gray-500">Geek</div>'
-            + '<div class="text-sm font-medium text-gray-200">' + renderValue(game.geekRating) + '</div>'
+            + '<div class="text-[11px] text-gray-500">Avg / Geek</div>'
+            + '<div class="text-sm font-medium text-gray-200">' + renderValue(game.averageRating) + ' / ' + renderValue(game.geekRating) + '</div>'
             + '</div>'
             + '</div>'
             + '<div class="mt-2 flex flex-wrap gap-1.5">' + renderCollectionBadges(game) + '</div>'
