@@ -1,5 +1,6 @@
 window.renderWantToBuyTab = function renderWantToBuyTab(options) {
     var games = Array.isArray(options.games) ? options.games : [];
+    var wantToPlayGames = Array.isArray(options.wantToPlayGames) ? options.wantToPlayGames : [];
     var escapeHTML = options.escapeHTML;
     var isValidImageUrl = options.isValidImageUrl;
     var getPlaceholderImageUrl = options.getPlaceholderImageUrl;
@@ -64,7 +65,7 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         return escapeHTML(String(value)) + (suffix ? suffix : '');
     }
 
-    function renderGameCard(game) {
+    function renderGameCard(game, showPrice) {
         var placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
         var thumbnailUrl = game.urlThumb && isValidImageUrl(game.urlThumb) ? game.urlThumb : placeholderSvg;
         var safeThumbnailUrl = escapeHTML(thumbnailUrl);
@@ -72,6 +73,9 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         var statsUrl = game.id ? '#gamestats/' + encodeURIComponent(String(game.id)) : '#';
         var bggUrl = game.bggId ? 'https://boardgamegeek.com/boardgame/' + escapeHTML(String(game.bggId)) + '/' : null;
         var priceRowId = 'wanttobuy-price-row-' + escapeHTML(String(game.bggId || game.id || ''));
+        var priceRow = showPrice !== false
+            ? '<div class="flex justify-between gap-3" id="' + priceRowId + '"><dt class="text-gray-500">Best Price</dt><dd class="text-gray-400 text-right text-xs italic">loading...</dd></div>'
+            : '';
 
         return '<article class="rounded-lg border border-gray-700 bg-gray-900/40 p-3 shadow-sm" data-wanttobuy-card data-sort-price="-1" data-sort-name="' + escapeHTML(String(game.name || '')) + '">'
             + '<div class="flex items-start gap-3">'
@@ -95,7 +99,7 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '<div class="mt-2 flex flex-wrap gap-1.5">' + renderCollectionBadges(game) + '</div>'
             + '<dl class="mt-3 space-y-1.5 text-sm">'
             + '<div class="flex justify-between gap-3"><dt class="text-gray-500">Last Played</dt><dd class="text-gray-200 text-right">' + renderValue(game.lastPlayed) + '</dd></div>'
-            + '<div class="flex justify-between gap-3" id="' + priceRowId + '"><dt class="text-gray-500">Best Price</dt><dd class="text-gray-400 text-right text-xs italic">loading...</dd></div>'
+            + priceRow
             + '</dl>'
             + '</div>'
             + '</div>'
@@ -176,23 +180,43 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         scheduleNext();
     }
 
-    if (games.length === 0) {
-        container.innerHTML = '<div class="rounded-lg border border-gray-700 bg-gray-900/40 p-6 text-sm text-gray-400">No games are currently marked wantToBuy.</div>';
+    if (games.length === 0 && wantToPlayGames.length === 0) {
+        container.innerHTML = '<div class="rounded-lg border border-gray-700 bg-gray-900/40 p-6 text-sm text-gray-400">No games are currently marked wantToBuy or wantToPlay.</div>';
         return;
     }
 
-    container.innerHTML = '<div class="mb-5 rounded-lg border border-amber-900/40 bg-amber-950/20 p-4">'
-        + '<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">'
-        + '<div>'
-        + '<h2 class="text-lg font-semibold text-amber-200">WantToBuy</h2>'
-        + '<p class="text-sm text-amber-100/80">Games from your database with want_to_buy=1, including metadata and cached price data.</p>'
-        + '</div>'
-        + '<div class="text-sm text-amber-300">' + escapeHTML(String(games.length)) + ' games</div>'
-        + '</div>'
-        + '</div>'
-        + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3" data-wanttobuy-grid>'
-        + games.map(renderGameCard).join('')
-        + '</div>';
+    var buySection = games.length > 0
+        ? '<div class="mb-5 rounded-lg border border-amber-900/40 bg-amber-950/20 p-4">'
+            + '<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">'
+            + '<div>'
+            + '<h2 class="text-lg font-semibold text-amber-200">WantToBuy</h2>'
+            + '<p class="text-sm text-amber-100/80">Games marked want_to_buy, with cached price data.</p>'
+            + '</div>'
+            + '<div class="text-sm text-amber-300">' + escapeHTML(String(games.length)) + ' games</div>'
+            + '</div>'
+            + '</div>'
+            + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-8" data-wanttobuy-grid>'
+            + games.map(function(g) { return renderGameCard(g, true); }).join('')
+            + '</div>'
+        : '';
+
+    var playSection = wantToPlayGames.length > 0
+        ? '<div class="mb-5 rounded-lg border border-cyan-900/40 bg-cyan-950/20 p-4">'
+            + '<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">'
+            + '<div>'
+            + '<h2 class="text-lg font-semibold text-cyan-200">WantToPlay</h2>'
+            + '<p class="text-sm text-cyan-100/80">Games marked want_to_play.</p>'
+            + '</div>'
+            + '<div class="text-sm text-cyan-300">' + escapeHTML(String(wantToPlayGames.length)) + ' games</div>'
+            + '</div>'
+            + '</div>'
+            + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3" data-wanttoplay-grid>'
+            + wantToPlayGames.map(function(g) { return renderGameCard(g, true); }).join('')
+            + '</div>'
+        : '';
+
+    container.innerHTML = buySection + playSection;
 
     loadPrices(games);
+    loadPrices(wantToPlayGames);
 };

@@ -398,6 +398,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         if (tabId === 'wanttobuy' && typeof window.renderWantToBuyTab === 'function') {
             window.renderWantToBuyTab({
                 games: window.BGStatsSelectors.getWantToBuyViewModel(state),
+                wantToPlayGames: window.BGStatsSelectors.getWantToPlayViewModel(state),
                 escapeHTML,
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,

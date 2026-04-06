@@ -787,24 +787,34 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function sortGamesByRatingThenYear(games) {
+        return games.sort((first, second) => {
+            const firstRating = Number(first.averageRating || 0);
+            const secondRating = Number(second.averageRating || 0);
+            if (secondRating !== firstRating) {
+                return secondRating - firstRating;
+            }
+
+            const firstYear = Number(first.year || 0);
+            const secondYear = Number(second.year || 0);
+            if (secondYear !== firstYear) {
+                return secondYear - firstYear;
+            }
+
+            return String(first.name || '').localeCompare(String(second.name || ''));
+        });
+    }
+
     function getWantToBuyViewModel(state) {
-        return state.games
-            .filter(game => game && game.wantToBuy)
-            .sort((first, second) => {
-                const firstRating = Number(first.averageRating || 0);
-                const secondRating = Number(second.averageRating || 0);
-                if (secondRating !== firstRating) {
-                    return secondRating - firstRating;
-                }
+        return sortGamesByRatingThenYear(
+            state.games.filter(game => game && game.wantToBuy)
+        );
+    }
 
-                const firstYear = Number(first.year || 0);
-                const secondYear = Number(second.year || 0);
-                if (secondYear !== firstYear) {
-                    return secondYear - firstYear;
-                }
-
-                return String(first.name || '').localeCompare(String(second.name || ''));
-            });
+    function getWantToPlayViewModel(state) {
+        return sortGamesByRatingThenYear(
+            state.games.filter(game => game && game.wantToPlay)
+        );
     }
 
     function normalizePlayerName(value) {
@@ -1011,6 +1021,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
         getLastRecordedPlayDate,
         getBggSchemaViewModel,
         getWantToBuyViewModel,
+        getWantToPlayViewModel,
         getGameStatsViewModel,
         getPlayerStatsViewModel
     };
