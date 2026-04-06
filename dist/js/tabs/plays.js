@@ -1,6 +1,7 @@
 function renderPlays4WeekChart(chartData) {
     if (!Array.isArray(chartData) || chartData.length === 0) return '';
     const maxCount = Math.max(1, ...chartData.map(d => d.count));
+    const maxCountEntry = chartData.find(d => d.count === maxCount) || { key: 'N/A' };
     const totalPlays = chartData.reduce((s, d) => s + d.count, 0);
     const W = 420, H = 72;
     const slotW = 15, barW = 12, topPad = 4, baseY = H - 14, chartH = baseY - topPad;
@@ -23,7 +24,7 @@ function renderPlays4WeekChart(chartData) {
         <div class="mb-4 rounded-lg border border-violet-900/40 bg-gray-900/60 px-3 pt-3 pb-2">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-xs font-semibold text-violet-300">📈 Last 4 Weeks</span>
-                <span class="text-xs text-gray-500">${totalPlays} play${totalPlays !== 1 ? 's' : ''} &middot; max ${maxCount}/day</span>
+                <span class="text-xs text-gray-500">${totalPlays} play${totalPlays !== 1 ? 's' : ''} &middot; max ${maxCount}/day (${maxCountEntry.key})</span>
             </div>
             <svg viewBox="0 0 ${W} ${H}" class="w-full" style="height:64px;" aria-hidden="true">
                 <line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="#374151" stroke-width="1"/>

@@ -8,6 +8,7 @@ function renderInsightsAllPlaysChart(playsOverTime, escapeHTML) {
     }
 
     const maxCount = series.reduce((m, d) => Math.max(m, d.count), 0) || 1;
+    const maxCountEntry = series.find(d => d.count === maxCount) || { key: 'N/A' };
     const totalPlaysChart = series.reduce((s, d) => s + d.count, 0);
     const W = 560, H = 100;
     const top = 6, bottom = 18, left = 4, right = 4;
@@ -39,7 +40,7 @@ function renderInsightsAllPlaysChart(playsOverTime, escapeHTML) {
     return `<div class="col-span-full bg-gray-800 p-6 rounded-lg border border-gray-700">
         <div class="flex justify-between items-center mb-3">
             <h3 class="text-gray-400 text-sm uppercase tracking-wider">📈 All Plays Over Time</h3>
-            <span class="text-xs text-gray-500">${totalPlaysChart} total · max ${maxCount}/month</span>
+            <span class="text-xs text-gray-500">${totalPlaysChart} total · max ${maxCount}/month (${escapeHTML(maxCountEntry.key)})</span>
         </div>
         <svg viewBox="0 0 ${W} ${H}" class="w-full" style="height:88px;" role="img" aria-label="All plays over time">
             <line x1="${left}" y1="${baseY}" x2="${W - right}" y2="${baseY}" stroke="#374151" stroke-width="1"/>
@@ -64,7 +65,8 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers
         latestOwnedPurchase,
         lastModifiedGame,
         anneVsSeb,
-        playsOverTime
+        playsOverTime,
+        firstPlayDate
     } = insightsData;
     const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
 
@@ -162,6 +164,7 @@ window.renderInsightsTab = function renderInsightsTab({ insightsData, allPlayers
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
             <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Plays Recorded</h3>
             <p class="text-5xl font-bold text-green-400">${escapeHTML(totalPlays)}</p>
+            <p class="text-xs text-gray-500 mt-2">Since ${escapeHTML(firstPlayDate)}</p>
         </div>
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
             <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Owned Games</h3>

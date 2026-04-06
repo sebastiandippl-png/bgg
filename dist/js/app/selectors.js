@@ -66,7 +66,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
             .sort((first, second) => Number(second.latestCollectionHistoryDate) - Number(first.latestCollectionHistoryDate))[0] || null;
 
         const lastModifiedGame = [...state.games]
-                .filter(game => game.owned && game.bggLastModified)
+                .filter(game => game.owned && game.bggLastModified && !game.forTrade)
             .sort((first, second) => new Date(second.bggLastModified) - new Date(first.bggLastModified))[0] || null;
 
         const anneNames = new Set(['anne']);
@@ -161,6 +161,13 @@ window.BGStatsSelectors = (function createSelectorModule() {
             }
         }
 
+        const firstPlayDate = state.plays.length > 0
+            ? state.plays
+                .map(play => play.Date)
+                .filter(date => date)
+                .sort()[0]
+            : 'N/A';
+
         return {
             hIndex,
             totalPlays,
@@ -171,7 +178,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
             latestOwnedPurchase,
             lastModifiedGame,
             anneVsSeb,
-            playsOverTime
+            playsOverTime,
+            firstPlayDate
         };
     }
 

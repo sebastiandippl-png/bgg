@@ -241,6 +241,9 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         var maxCount = monthSeries.reduce(function (maxVal, entry) {
             return Math.max(maxVal, entry.count);
         }, 0);
+        var maxCountEntry = monthSeries.find(function (entry) {
+            return entry.count === maxCount;
+        }) || { key: 'N/A' };
 
         var width = 300;
         var height = 92;
@@ -277,7 +280,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             + '</svg>'
             + '<div class="flex items-center justify-between text-[10px] text-gray-500 mt-1">'
             + '<span>' + firstLabel + '</span>'
-            + '<span>max ' + escapeHTML(String(maxCount)) + '/month</span>'
+            + '<span>max ' + escapeHTML(String(maxCount)) + '/month (' + escapeHTML(maxCountEntry.key) + ')</span>'
             + '<span>' + lastLabel + '</span>'
             + '</div>'
             + '</div>';
