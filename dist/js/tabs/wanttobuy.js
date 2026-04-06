@@ -194,6 +194,8 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '</div>'
             + '<div class="text-sm text-amber-300">' + escapeHTML(String(games.length)) + ' games</div>'
             + '</div>'
+            + '<p class="text-sm text-amber-100/80">More Prices: <a href="https://www.brettspiel-angebote.de/merkliste/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">BrettspielAngebote.de</a></p>'
+            + '</div>'
             + '</div>'
             + '<div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-8" data-wanttobuy-grid>'
             + games.map(function(g) { return renderGameCard(g, true); }).join('')
