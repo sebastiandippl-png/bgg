@@ -34,8 +34,9 @@ function renderPlays4WeekChart(chartData) {
         </div>`;
 }
 
-window.renderPlaysTab = function renderPlaysTab({ playsData, chartData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'plays-table' }) {
+window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chartData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'plays-table' }) {
     const recentPlays = playsData;
+    const allPlays = Array.isArray(allPlaysData) && allPlaysData.length > 0 ? allPlaysData : recentPlays;
     let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">';
 
     function getPlayerKeyByName(name) {
@@ -105,6 +106,125 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, chartData, allPlaye
         }
         return escapeHTML(String(value));
     }
+
+    function getPlayThumbnailUrl(play) {
+        const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+        const game = play && play.game;
+        if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
+            return game.urlThumb;
+        }
+        return placeholderSvg;
+    }
+
+    function renderLastMonthCollageCard() {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        monthStart.setHours(0, 0, 0, 0);
+        monthEnd.setHours(23, 59, 59, 999);
+
+        const lastMonthPlays = allPlays.filter(play => {
+            const playDate = play && play.Date ? new Date(play.Date) : null;
+            if (!playDate || Number.isNaN(playDate.getTime())) {
+                return false;
+            }
+            return playDate >= monthStart && playDate <= monthEnd;
+        });
+
+        if (lastMonthPlays.length === 0) {
+            return '';
+        }
+
+        const monthTitle = new Intl.DateTimeFormat(undefined, {
+            month: 'long',
+            year: 'numeric'
+        }).format(monthStart);
+
+        const gamesByKey = new Map();
+
+        lastMonthPlays.forEach(play => {
+            const fallbackName = String((play && play.Game) || 'Unknown Game').trim() || 'Unknown Game';
+            const gameKey = play && play.gameId
+                ? `id:${String(play.gameId).trim()}`
+                : `name:${fallbackName.toLowerCase()}`;
+            const duration = Number(play && play.Duration);
+
+            if (!gamesByKey.has(gameKey)) {
+                gamesByKey.set(gameKey, {
+                    key: gameKey,
+                    gameName: fallbackName,
+                    playCount: 0,
+                    totalDuration: 0,
+                    thumbnailUrl: getPlayThumbnailUrl(play)
+                });
+            }
+
+            const item = gamesByKey.get(gameKey);
+            item.playCount += 1;
+            item.totalDuration += Number.isFinite(duration) ? duration : 0;
+        });
+
+        const gameList = [...gamesByKey.values()]
+            .sort((a, b) => b.playCount - a.playCount || b.totalDuration - a.totalDuration || a.gameName.localeCompare(b.gameName));
+
+        const mostPlayedKey = gameList[0] ? gameList[0].key : null;
+        const mostTimeKey = gameList.reduce((bestKey, item) => {
+            if (!bestKey) {
+                return item.key;
+            }
+            const currentBest = gamesByKey.get(bestKey);
+            if (!currentBest) {
+                return item.key;
+            }
+            if (item.totalDuration > currentBest.totalDuration) {
+                return item.key;
+            }
+            if (item.totalDuration === currentBest.totalDuration && item.playCount > currentBest.playCount) {
+                return item.key;
+            }
+            return bestKey;
+        }, null);
+
+        const collageItemsMarkup = gameList.slice(0, 18).map(item => {
+            const safeThumb = escapeHTML(item.thumbnailUrl || '');
+            const safeName = escapeHTML(item.gameName || 'Unknown Game');
+            const trophyBadge = item.key === mostPlayedKey
+                ? '<span class="absolute top-1 left-1 rounded-full bg-amber-400/95 text-gray-900 text-[11px] leading-none px-1 py-0.5" title="Most played game">🏆</span>'
+                : '';
+            const watchBadge = item.key === mostTimeKey
+                ? '<span class="absolute top-1 right-1 rounded-full bg-cyan-300/95 text-gray-900 text-[11px] leading-none px-1 py-0.5" title="Most time spent">⌚</span>'
+                : '';
+
+            return `
+                <div class="relative overflow-hidden rounded-md border border-gray-600/70 bg-gray-700/70">
+                    <img src="${safeThumb}" alt="${safeName}" class="w-full h-full object-cover aspect-square" loading="lazy">
+                    ${trophyBadge}
+                    ${watchBadge}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bg-gray-800 border border-indigo-600/40 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200 h-full lg:col-span-2">
+                <div class="relative p-3 sm:p-4 bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900">
+                    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.4),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.35),_transparent_40%)]"></div>
+                    <div class="relative flex items-center justify-between mb-3">
+                        <h3 class="text-sm sm:text-base font-semibold text-gray-100 tracking-wide">${escapeHTML(monthTitle)}</h3>
+                        <span class="text-[11px] sm:text-xs text-gray-300 bg-black/35 px-2 py-1 rounded-md">${lastMonthPlays.length} plays • ${gameList.length} games</span>
+                    </div>
+                    <div class="relative grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1.5">
+                        ${collageItemsMarkup}
+                    </div>
+                    <div class="relative mt-3 text-[11px] sm:text-xs text-gray-300 flex gap-3 flex-wrap">
+                        <span><span class="text-amber-300">🏆</span> Most played: ${escapeHTML(gameList[0] ? gameList[0].gameName : 'N/A')}</span>
+                        <span><span class="text-cyan-300">⌚</span> Most time: ${escapeHTML(gamesByKey.get(mostTimeKey) ? gamesByKey.get(mostTimeKey).gameName : 'N/A')}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    cardsHTML += renderLastMonthCollageCard();
 
     recentPlays.forEach(play => {
         const game = play.game;

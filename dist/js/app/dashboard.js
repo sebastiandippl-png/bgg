@@ -353,6 +353,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         if (tabId === 'plays' && typeof window.renderPlaysTab === 'function') {
             window.renderPlaysTab({
                 playsData: window.BGStatsSelectors.getRecentPlaysViewModel(state),
+                allPlaysData: window.BGStatsSelectors.getAllPlaysViewModel(state),
                 chartData: window.BGStatsSelectors.getPlaysChartViewModel(state),
                 allPlayers: state.players,
                 escapeHTML,

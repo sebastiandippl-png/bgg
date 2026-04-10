@@ -183,6 +183,18 @@ window.BGStatsSelectors = (function createSelectorModule() {
         };
     }
 
+    function mapPlaysWithGameMetadata(plays, gamesById) {
+        return plays.map(play => {
+            const localGame = gamesById.get(play.gameId);
+            const bggId = String(play.gameId || '').trim().replace(/^bgg_/i, '');
+            return {
+                ...play,
+                game: localGame || null,
+                isNotOwned: !localGame && !!bggId
+            };
+        });
+    }
+
     function getRecentPlaysViewModel(state) {
         const sortedPlays = window.sortDataUtil(state.plays, state.sort.plays);
         const gamesById = new Map(state.games.map(game => [game.id, game]));
@@ -190,20 +202,19 @@ window.BGStatsSelectors = (function createSelectorModule() {
         cutoff.setDate(cutoff.getDate() - 27);
         cutoff.setHours(0, 0, 0, 0);
 
-        return sortedPlays
+        const filteredPlays = sortedPlays
             .filter(play => {
                 const d = play.Date ? new Date(play.Date) : null;
                 return d && !Number.isNaN(d.getTime()) && d >= cutoff;
-            })
-            .map(play => {
-                const localGame = gamesById.get(play.gameId);
-                const bggId = String(play.gameId || '').trim().replace(/^bgg_/i, '');
-                return {
-                    ...play,
-                    game: localGame || null,
-                    isNotOwned: !localGame && !!bggId
-                };
             });
+
+        return mapPlaysWithGameMetadata(filteredPlays, gamesById);
+    }
+
+    function getAllPlaysViewModel(state) {
+        const sortedPlays = window.sortDataUtil(state.plays, state.sort.plays);
+        const gamesById = new Map(state.games.map(game => [game.id, game]));
+        return mapPlaysWithGameMetadata(sortedPlays, gamesById);
     }
 
     function getMostPlayedByYearViewModel(state) {
@@ -1132,6 +1143,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
     return {
         getInsightsViewModel,
         getRecentPlaysViewModel,
+        getAllPlaysViewModel,
         getPlaysChartViewModel,
         getMostPlayedByYearViewModel,
         getOnceUponViewModel,

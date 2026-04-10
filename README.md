@@ -39,6 +39,11 @@ The `OnceUpon` tab shows three day-based cards with full play details (duration,
 - played today one year ago
 - played today 5 years ago
 
+The `Last Plays` tab now includes a monthly thumbnail collage card for the previous calendar month (days 1–31/30/29 as applicable), including:
+- month/year label directly on top of the collage
+- badge markers for most played game (`🏆`) and most time spent game (`⌚`)
+- inline summary of total plays and unique games in that month
+
 The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, the cached Brettspielpreise best offer, and a compact top-5 Funtainment price list per game.
 
 WantToBuy price lookup behavior:
