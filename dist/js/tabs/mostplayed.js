@@ -49,10 +49,22 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         var winnerBadge = rank === 1
             ? '<span class="ml-2 text-amber-300" aria-label="winner">🏆</span>'
             : '';
+        var rankChange = game && game.rankChange ? String(game.rankChange) : '';
+        var rankChangeBadge = '';
+
+        if (rankChange === 'up') {
+            rankChangeBadge = '<span class="ml-2 text-emerald-300" title="Higher rank than comparison period" aria-label="higher rank">↑</span>';
+        } else if (rankChange === 'down') {
+            rankChangeBadge = '<span class="ml-2 text-rose-300" title="Lower rank than comparison period" aria-label="lower rank">↓</span>';
+        } else if (rankChange === 'same') {
+            rankChangeBadge = '<span class="ml-2 text-gray-300" title="Same rank as comparison period" aria-label="same rank">→</span>';
+        } else if (rankChange === 'new') {
+            rankChangeBadge = '<span class="ml-2 text-sky-300" title="Not in comparison period list" aria-label="new in list">✦</span>';
+        }
 
         return '<div class="flex items-center gap-3 py-1.5 border-b border-gray-700/40 last:border-0">'
             + '<span class="w-6 text-right text-xs text-gray-500 tabular-nums">' + rank + '.</span>'
-            + '<span class="flex-1 min-w-0 truncate">' + gameLink + winnerBadge + '</span>'
+            + '<span class="flex-1 min-w-0 truncate">' + gameLink + winnerBadge + rankChangeBadge + '</span>'
             + '<span class="text-xs text-fuchsia-300 font-semibold tabular-nums">' + escapeHTML(String(game.playCount)) + ' plays</span>'
             + '</div>';
     }
@@ -88,6 +100,9 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + '<p class="text-xs text-amber-200/80 mb-3">'
         + escapeHTML(String(last365Days.totalPlays || 0)) + ' plays · '
         + escapeHTML(String(last365Days.uniqueGames || 0)) + ' unique games'
+        + '</p>'
+        + '<p class="text-[11px] text-amber-100/70 mb-3">'
+        + escapeHTML(String(last365Days.comparisonLabel || 'rank vs previous period'))
         + '</p>'
         + '<div>' + topCardListMarkup + '</div>'
         + '</section>';
@@ -125,6 +140,7 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
             + escapeHTML(String(yearEntry.totalPlays || 0)) + ' plays · '
             + escapeHTML(String(yearEntry.uniqueGames || 0)) + ' unique games'
             + '</p>'
+            + '<p class="text-[11px] text-gray-500 mb-3">rank vs previous year (same category)</p>'
             + '<div>' + yearLists + '</div>'
             + '</section>';
     }).join('');

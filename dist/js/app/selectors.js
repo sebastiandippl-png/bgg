@@ -211,13 +211,80 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const currentYear = now.getFullYear();
         const last365Cutoff = new Date(now);
         last365Cutoff.setDate(last365Cutoff.getDate() - 365);
+        const previousWindowEnd = new Date(now);
+        previousWindowEnd.setMonth(previousWindowEnd.getMonth() - 1);
+        const previousWindowCutoff = new Date(previousWindowEnd);
+        previousWindowCutoff.setDate(previousWindowCutoff.getDate() - 365);
         const gamesById = new Map(state.games.map(game => [String(game.id), game]));
         const yearlyBuckets = new Map();
         const yearlyTotalPlays = new Map();
         const overallCounts = new Map();
         const rollingWindowCounts = new Map();
+        const previousRollingWindowCounts = new Map();
         let rollingWindowTotalPlays = 0;
         let overallTotalPlays = 0;
+
+        function getWeightCategory(weight) {
+            const numericWeight = Number(weight);
+            if (Number.isFinite(numericWeight) && numericWeight > 3) {
+                return 'heavy';
+            }
+            if (Number.isFinite(numericWeight) && numericWeight > 1.8) {
+                return 'medium';
+            }
+            return 'light';
+        }
+
+        function buildCategoryRankMap(rows) {
+            const rankMap = new Map();
+            const counters = {
+                heavy: 0,
+                medium: 0,
+                light: 0
+            };
+
+            rows.forEach(row => {
+                const category = getWeightCategory(row.weight);
+                counters[category] += 1;
+                rankMap.set(String(row.rankKey || ''), counters[category]);
+            });
+
+            return rankMap;
+        }
+
+        function addRankChange(rows, previousRows) {
+            const previousRankMap = buildCategoryRankMap(previousRows || []);
+            const currentCounters = {
+                heavy: 0,
+                medium: 0,
+                light: 0
+            };
+
+            return rows.map(row => {
+                const category = getWeightCategory(row.weight);
+                currentCounters[category] += 1;
+                const currentRank = currentCounters[category];
+                const previousRank = previousRankMap.get(String(row.rankKey || ''));
+                let rankChange = null;
+
+                if (Number.isFinite(previousRank)) {
+                    if (currentRank < previousRank) {
+                        rankChange = 'up';
+                    } else if (currentRank > previousRank) {
+                        rankChange = 'down';
+                    } else {
+                        rankChange = 'same';
+                    }
+                } else {
+                    rankChange = 'new';
+                }
+
+                return {
+                    ...row,
+                    rankChange
+                };
+            });
+        }
 
         state.plays.forEach(play => {
             const playDate = play.Date ? new Date(play.Date) : null;
@@ -239,6 +306,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
             if (!overallCounts.has(key)) {
                 overallCounts.set(key, {
+                    rankKey: key,
                     gameId: gameId || null,
                     gameName: matchedGameForOverall && matchedGameForOverall.name ? matchedGameForOverall.name : fallbackName,
                     weight: matchedGameForOverall && Number.isFinite(Number(matchedGameForOverall.weight)) ? Number(matchedGameForOverall.weight) : null,
@@ -250,6 +318,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
             if (!yearlyCounts.has(key)) {
                 const matchedGame = gameId ? gamesById.get(gameId) : null;
                 yearlyCounts.set(key, {
+                    rankKey: key,
                     gameId: gameId || null,
                     gameName: matchedGame && matchedGame.name ? matchedGame.name : fallbackName,
                     weight: matchedGame && Number.isFinite(Number(matchedGame.weight)) ? Number(matchedGame.weight) : null,
@@ -269,6 +338,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 if (!rollingWindowCounts.has(key)) {
                     const matchedGameForWindow = gameId ? gamesById.get(gameId) : null;
                     rollingWindowCounts.set(key, {
+                        rankKey: key,
                         gameId: gameId || null,
                         gameName: matchedGameForWindow && matchedGameForWindow.name ? matchedGameForWindow.name : fallbackName,
                         weight: matchedGameForWindow && Number.isFinite(Number(matchedGameForWindow.weight)) ? Number(matchedGameForWindow.weight) : null,
@@ -277,6 +347,21 @@ window.BGStatsSelectors = (function createSelectorModule() {
                     });
                 }
                 rollingWindowCounts.get(key).playCount += 1;
+            }
+
+            if (playDate >= previousWindowCutoff && playDate <= previousWindowEnd) {
+                if (!previousRollingWindowCounts.has(key)) {
+                    const matchedGameForPreviousWindow = gameId ? gamesById.get(gameId) : null;
+                    previousRollingWindowCounts.set(key, {
+                        rankKey: key,
+                        gameId: gameId || null,
+                        gameName: matchedGameForPreviousWindow && matchedGameForPreviousWindow.name ? matchedGameForPreviousWindow.name : fallbackName,
+                        weight: matchedGameForPreviousWindow && Number.isFinite(Number(matchedGameForPreviousWindow.weight)) ? Number(matchedGameForPreviousWindow.weight) : null,
+                        hasLocalGame: !!matchedGameForPreviousWindow,
+                        playCount: 0
+                    });
+                }
+                previousRollingWindowCounts.get(key).playCount += 1;
             }
         });
 
@@ -287,21 +372,33 @@ window.BGStatsSelectors = (function createSelectorModule() {
 
         const years = [...yearlyBuckets.keys()].sort((a, b) => b - a);
 
-        const yearCards = years.map(year => {
+        const rowsByYear = new Map();
+        years.forEach(year => {
             const rows = [...yearlyBuckets.get(year).values()]
                 .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+
+            rowsByYear.set(year, rows);
+        });
+
+        const yearCards = years.map(year => {
+            const rows = rowsByYear.get(year) || [];
+            const previousRows = rowsByYear.get(year - 1) || [];
+            const rowsWithRankChange = addRankChange(rows, previousRows);
 
             return {
                 year,
                 isCurrentYear: year === currentYear,
                 totalPlays: yearlyTotalPlays.get(year) || 0,
                 uniqueGames: yearlyBuckets.get(year).size,
-                games: rows
+                games: rowsWithRankChange
             };
         });
 
         const last365DaysGames = [...rollingWindowCounts.values()]
             .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+        const previousLast365DaysGames = [...previousRollingWindowCounts.values()]
+            .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+        const last365DaysGamesWithRankChange = addRankChange(last365DaysGames, previousLast365DaysGames);
         const overallGames = [...overallCounts.values()]
             .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
 
@@ -311,7 +408,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 label: 'Last 365 Days',
                 totalPlays: rollingWindowTotalPlays,
                 uniqueGames: rollingWindowCounts.size,
-                games: last365DaysGames
+                comparisonLabel: 'rank vs window one month ago',
+                games: last365DaysGamesWithRankChange
             },
             overall: {
                 label: 'Overall',

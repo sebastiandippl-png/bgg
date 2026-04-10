@@ -49,6 +49,16 @@ WantToBuy price lookup behavior:
 
 Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
+The `Most Played` tab shows small rank-movement symbols in each weight category list:
+- `↑` = higher rank than the comparison period
+- `↓` = lower rank than the comparison period
+- `→` = same rank as the comparison period
+- `✦` = not in the comparison period list
+
+Comparison periods:
+- Year cards compare against the previous year (within the same weight category)
+- `Last 365 Days` compares against the same 365-day window ending one month earlier
+
 ## Project Structure
 
 - `dist/bgstats-dashboard.html`: main dashboard UI

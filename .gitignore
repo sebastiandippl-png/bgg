@@ -26,3 +26,4 @@ tools/bgg_dump/
 dist/db_storage/cache_bgg/
 dist/bgg.db-shm
 dist/bgg.db-wal
+dist/db_storage/bgg_sync_log.json
