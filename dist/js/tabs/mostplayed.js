@@ -120,6 +120,9 @@ window.renderMostPlayedTab = function renderMostPlayedTab(options) {
         + escapeHTML(String(overall.totalPlays || 0)) + ' plays · '
         + escapeHTML(String(overall.uniqueGames || 0)) + ' unique games'
         + '</p>'
+        + '<p class="text-[11px] text-gray-500 mb-3">'
+        + escapeHTML(String(overall.comparisonLabel || 'rank vs previous period'))
+        + '</p>'
         + '<div>' + overallCardListMarkup + '</div>'
         + '</section>';
 

@@ -58,6 +58,7 @@ The `Most Played` tab shows small rank-movement symbols in each weight category 
 Comparison periods:
 - Year cards compare against the previous year (within the same weight category)
 - `Last 365 Days` compares against the same 365-day window ending one month earlier
+- `Overall` compares against the overall state one month earlier
 
 ## Project Structure
 

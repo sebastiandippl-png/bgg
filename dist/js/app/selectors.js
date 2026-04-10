@@ -219,6 +219,7 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const yearlyBuckets = new Map();
         const yearlyTotalPlays = new Map();
         const overallCounts = new Map();
+        const previousOverallCounts = new Map();
         const rollingWindowCounts = new Map();
         const previousRollingWindowCounts = new Map();
         let rollingWindowTotalPlays = 0;
@@ -333,6 +334,21 @@ window.BGStatsSelectors = (function createSelectorModule() {
             overallTotalPlays += 1;
             yearlyTotalPlays.set(year, (yearlyTotalPlays.get(year) || 0) + 1);
 
+            if (playDate <= previousWindowEnd) {
+                if (!previousOverallCounts.has(key)) {
+                    const matchedGameForPreviousOverall = gameId ? gamesById.get(gameId) : null;
+                    previousOverallCounts.set(key, {
+                        rankKey: key,
+                        gameId: gameId || null,
+                        gameName: matchedGameForPreviousOverall && matchedGameForPreviousOverall.name ? matchedGameForPreviousOverall.name : fallbackName,
+                        weight: matchedGameForPreviousOverall && Number.isFinite(Number(matchedGameForPreviousOverall.weight)) ? Number(matchedGameForPreviousOverall.weight) : null,
+                        hasLocalGame: !!matchedGameForPreviousOverall,
+                        playCount: 0
+                    });
+                }
+                previousOverallCounts.get(key).playCount += 1;
+            }
+
             if (playDate >= last365Cutoff && playDate <= now) {
                 rollingWindowTotalPlays += 1;
                 if (!rollingWindowCounts.has(key)) {
@@ -401,6 +417,9 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const last365DaysGamesWithRankChange = addRankChange(last365DaysGames, previousLast365DaysGames);
         const overallGames = [...overallCounts.values()]
             .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+        const previousOverallGames = [...previousOverallCounts.values()]
+            .sort((a, b) => b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+        const overallGamesWithRankChange = addRankChange(overallGames, previousOverallGames);
 
         return {
             currentYear,
@@ -415,7 +434,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
                 label: 'Overall',
                 totalPlays: overallTotalPlays,
                 uniqueGames: overallCounts.size,
-                games: overallGames
+                comparisonLabel: 'rank vs overall one month ago',
+                games: overallGamesWithRankChange
             },
             years: yearCards
         };
