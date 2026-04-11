@@ -46,6 +46,10 @@ The `Last Plays` tab now includes a monthly thumbnail collage card for the previ
 
 The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, the cached Brettspielpreise best offer, and a compact top-5 Funtainment price list per game.
 
+The `Player Stats` detail view shows both metrics:
+- `Win Rate`: classic wins / plays percentage
+- `Weighted Win Rate` (BGG style): per-play value is `0%` on a loss, or `(number_of_players / 2) * 100` on a win, averaged across all plays
+
 WantToBuy price lookup behavior:
 - Uses `dist/api/get_game_price.php` for Brettspielpreise best offer (24-hour cache)
 - Uses `dist/api/get_funtainment_prices.php`

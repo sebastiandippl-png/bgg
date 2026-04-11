@@ -997,6 +997,23 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const firstPlay = sortedByDateAsc[0] || null;
         const lastPlay = sortedByDateDesc[0] || null;
         const winsCount = playerPlays.reduce((accumulator, play) => accumulator + (play.isWin ? 1 : 0), 0);
+        const weightedWinRateTotal = playerPlays.reduce((accumulator, play) => {
+            if (!play.isWin) {
+                return accumulator;
+            }
+            const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
+            const playerCount = scores.length;
+            if (!Number.isFinite(playerCount) || playerCount <= 0) {
+                return accumulator;
+            }
+            return accumulator + (playerCount / 2) * 100;
+        }, 0);
+        const normalWinRate = playCount > 0
+            ? parseFloat(((winsCount / playCount) * 100).toFixed(1))
+            : 0;
+        const weightedWinRate = playCount > 0
+            ? parseFloat((weightedWinRateTotal / playCount).toFixed(1))
+            : 0;
 
         const longestPlay = playerPlays.reduce((currentLongest, play) => {
             const duration = Number(play.durationMin !== undefined ? play.durationMin : play.Duration);
@@ -1111,6 +1128,8 @@ window.BGStatsSelectors = (function createSelectorModule() {
             player,
             playCount,
             winsCount,
+            normalWinRate,
+            weightedWinRate,
             firstPlay,
             lastPlay,
             longestPlay,

@@ -138,6 +138,8 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
         var player = data.player;
         var playCount = data.playCount;
         var winsCount = data.winsCount;
+        var normalWinRate = data.normalWinRate;
+        var weightedWinRate = data.weightedWinRate;
         var firstPlay = data.firstPlay;
         var lastPlay = data.lastPlay;
         var longestPlay = data.longestPlay;
@@ -245,9 +247,27 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
             + '<h2 class="text-xl font-bold text-gray-100 leading-tight">' + escapeHTML(player.name) + '</h2>'
             + '<p class="text-sm text-gray-500 mt-1">Player statistics across all recorded plays</p>'
             + '</div>'
-            + '<div class="shrink-0 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-center">'
-            + '<div class="text-xs uppercase tracking-wider text-rose-300">Win Rate</div>'
-            + '<div class="text-2xl font-bold text-rose-200 mt-1">' + escapeHTML(String(player.WinRate)) + '%</div>'
+            + '<div class="shrink-0 flex items-stretch gap-2">'
+            + '<div class="rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-center min-w-[132px]">'
+            + '<div class="text-xs uppercase tracking-wider text-rose-300 flex items-center justify-center gap-1">'
+            + '<span>Win Rate</span>'
+            + '<span class="relative inline-flex items-center group">'
+            + '<span class="inline-flex h-4 w-4 items-center justify-center rounded-full border border-rose-400/50 text-[10px] font-bold text-rose-200 cursor-help" tabindex="0" aria-label="Win rate formula">?</span>'
+            + '<span class="pointer-events-none absolute z-20 hidden group-hover:block group-focus-within:block bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-md border border-rose-500/40 bg-gray-900 px-2 py-1 text-[11px] normal-case leading-snug text-rose-100 shadow-lg">Classic win rate: (wins / total plays) * 100.</span>'
+            + '</span>'
+            + '</div>'
+            + '<div class="text-2xl font-bold text-rose-200 mt-1">' + escapeHTML(String(normalWinRate)) + '%</div>'
+            + '</div>'
+            + '<div class="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-4 py-3 text-center min-w-[132px]">'
+            + '<div class="text-xs uppercase tracking-wider text-cyan-300 flex items-center justify-center gap-1">'
+            + '<span>Weighted Win Rate</span>'
+            + '<span class="relative inline-flex items-center group">'
+            + '<span class="inline-flex h-4 w-4 items-center justify-center rounded-full border border-cyan-400/50 text-[10px] font-bold text-cyan-200 cursor-help" tabindex="0" aria-label="Weighted win rate formula">?</span>'
+            + '<span class="pointer-events-none absolute z-20 hidden group-hover:block group-focus-within:block bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 rounded-md border border-cyan-500/40 bg-gray-900 px-2 py-1 text-[11px] normal-case leading-snug text-cyan-100 shadow-lg">BGG style: each loss = 0%. Each win = (players / 2) * 100. Examples: 2p=100%, 3p=150%, 4p=200%, 8p=400%. Final value is the average across all plays.</span>'
+            + '</span>'
+            + '</div>'
+            + '<div class="text-2xl font-bold text-cyan-200 mt-1">' + escapeHTML(String(weightedWinRate)) + '%</div>'
+            + '</div>'
             + '</div>'
             + '</div>'
             + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">'
