@@ -463,6 +463,21 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                 + '</div>';
         }
 
+        // -- Forum cards (News + General) --
+        var forumsBlock = '<div class="rounded-lg border border-gray-700 p-4 md:col-span-2" id="gamestats-forums-block">'
+            + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">\uD83D\uDDE8\uFE0F BGG Forums</h3>'
+            + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="gamestats-forums-inner">'
+            + '<div id="gamestats-forum-News" class="rounded-md bg-gray-900/40 p-3">'
+            + '<div class="text-xs font-semibold text-gray-400 mb-2">\uD83D\uDCE2 News</div>'
+            + '<div class="text-xs text-gray-600 italic">Loading\u2026</div>'
+            + '</div>'
+            + '<div id="gamestats-forum-General" class="rounded-md bg-gray-900/40 p-3">'
+            + '<div class="text-xs font-semibold text-gray-400 mb-2">\uD83D\uDCAC General</div>'
+            + '<div class="text-xs text-gray-600 italic">Loading\u2026</div>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+
         // Arrange in responsive grid - 2 columns on md+
         // Order: gameInfo | playHistory / scores | players / recentPlays (full width)
 
@@ -479,6 +494,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             + scoresBlock
             + playersBlock
             + recentPlaysBlock
+            + forumsBlock
             + '</div>'
             + '</div>';
     }
@@ -494,6 +510,56 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
     }
 
     container.innerHTML = renderDetailView(gameStatsData);
+
+    // Async: fetch BGG forum threads for News and General
+    var bggIdForForums = gameStatsData && gameStatsData.game && gameStatsData.game.bggId
+        ? String(gameStatsData.game.bggId)
+        : null;
+    if (bggIdForForums) {
+        fetch('api/get_bgg_forums.php?bgg_id=' + encodeURIComponent(bggIdForForums))
+            .then(function (res) { return res.json(); })
+            .then(function (json) {
+                var forumTitles = ['News', 'General'];
+                var forumIcons = { News: '\uD83D\uDCE2', General: '\uD83D\uDCAC' };
+                forumTitles.forEach(function (title) {
+                    var el = document.getElementById('gamestats-forum-' + title);
+                    if (!el) { return; }
+                    var threads = (json.success && json.forums && Array.isArray(json.forums[title]))
+                        ? json.forums[title]
+                        : [];
+                    if (threads.length === 0) {
+                        el.innerHTML = '<div class="text-xs font-semibold text-gray-400 mb-2">' + forumIcons[title] + ' ' + title + '</div>'
+                            + '<div class="text-xs text-gray-600 italic">No threads found.</div>';
+                        return;
+                    }
+                    var items = threads.map(function (t) {
+                        var safeSubject = String(t.subject || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var safeAuthor = String(t.author || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        var threadUrl = 'https://boardgamegeek.com/thread/' + encodeURIComponent(String(t.id));
+                        var dateStr = '';
+                        if (t.lastpostdate) {
+                            var d = new Date(t.lastpostdate);
+                            if (!isNaN(d.getTime())) {
+                                dateStr = d.toISOString().slice(0, 10);
+                            }
+                        }
+                        return '<a href="' + threadUrl + '" target="_blank" rel="noopener noreferrer"'
+                            + ' class="flex flex-col gap-0.5 py-1.5 border-b border-gray-700/40 last:border-0 hover:bg-gray-800/60 rounded px-1 transition group">'
+                            + '<span class="text-xs text-blue-400 group-hover:text-blue-300 leading-snug">' + safeSubject + '</span>'
+                            + '<span class="text-[10px] text-gray-600">' + safeAuthor + (dateStr ? ' &middot; ' + dateStr : '') + '</span>'
+                            + '</a>';
+                    }).join('');
+                    el.innerHTML = '<div class="text-xs font-semibold text-gray-400 mb-2">' + forumIcons[title] + ' ' + title + '</div>'
+                        + '<div class="flex flex-col">' + items + '</div>';
+                });
+            })
+            .catch(function () {
+                ['News', 'General'].forEach(function (title) {
+                    var el = document.getElementById('gamestats-forum-' + title);
+                    if (el) { el.querySelector('div:last-child').innerHTML = '<span class="text-xs text-gray-600 italic">Could not load.</span>'; }
+                });
+            });
+    }
 
     // Async: fetch price for the selected game
     var bggIdForPrice = gameStatsData && gameStatsData.game && gameStatsData.game.bggId

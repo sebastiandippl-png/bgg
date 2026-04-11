@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<forums type="thing" id="167791" termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
+	<forum id="1560415" groupid="0" title="Reviews" noposting="0" description="Post your game reviews in this forum.  &lt;A href=&quot;/thread/59278&quot;&gt;Click here for help on writing game reviews.&lt;/A&gt;" numthreads="164" numposts="3012" lastpostdate="Tue, 07 Apr 2026 17:18:31 +0000" />
+	<forum id="1560416" groupid="0" title="Sessions" noposting="0" description="Post your session reports here." numthreads="110" numposts="976" lastpostdate="Wed, 01 Oct 2025 16:13:57 +0000" />
+	<forum id="1560417" groupid="0" title="General" noposting="0" description="Post any related article to this game here." numthreads="2287" numposts="39142" lastpostdate="Wed, 01 Apr 2026 22:23:54 +0000" />
+	<forum id="1560418" groupid="0" title="Rules" noposting="0" description="Post any rules questions you have here." numthreads="1516" numposts="15636" lastpostdate="Fri, 10 Apr 2026 21:38:08 +0000" />
+	<forum id="1560419" groupid="0" title="Strategy" noposting="0" description="Post strategy and tactics articles here." numthreads="234" numposts="6632" lastpostdate="Sat, 14 Feb 2026 23:01:48 +0000" />
+	<forum id="1560420" groupid="0" title="Variants" noposting="0" description="Post variants to the game rules here." numthreads="983" numposts="17625" lastpostdate="Sat, 11 Apr 2026 06:21:03 +0000" />
+	<forum id="1560421" groupid="0" title="News" noposting="0" description="Post time sensitive announcements here." numthreads="75" numposts="2311" lastpostdate="Sun, 05 Apr 2026 09:29:19 +0000" />
+	<forum id="2429889" groupid="0" title="Crowdfunding" noposting="0" description="Post crowdfunding / preorder content here." numthreads="47" numposts="615" lastpostdate="Mon, 02 Mar 2026 07:42:15 +0000" />
+	<forum id="1560422" groupid="0" title="Play By Forum" noposting="0" description="Run Play By Forum (PBF) games here." numthreads="254" numposts="86957" lastpostdate="Wed, 08 Apr 2026 02:24:47 +0000" />
+	<forum id="1560423" groupid="0" title="Find Players" noposting="0" description="Post here to find local gamers and to promote local events." numthreads="84" numposts="2922" lastpostdate="Thu, 26 Mar 2026 00:25:02 +0000" />
+</forums>
