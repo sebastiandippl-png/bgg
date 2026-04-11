@@ -113,6 +113,16 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
         return '<span class="text-gray-200">' + escapeHTML(String(label)) + '</span>';
     }
 
+    function onceUponDateLink(dateValue, className) {
+        var normalizedDate = String(dateValue || '').trim();
+        var safeLabel = escapeHTML(normalizedDate || '\u2014');
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
+            return '<span class="' + (className || 'text-gray-200') + '">' + safeLabel + '</span>';
+        }
+
+        return '<a href="#onceupon/' + encodeURIComponent(normalizedDate) + '" class="' + (className || 'text-cyan-300 hover:text-cyan-200 underline') + '">' + safeLabel + '</a>';
+    }
+
     function renderSearchView() {
         return '<div class="max-w-xl mx-auto pt-8 pb-4 px-2 sm:px-4">'
             + '<h2 class="text-lg font-semibold text-gray-200 mb-4">🔎 Search for a player</h2>'
@@ -150,14 +160,14 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
 
         var firstPlayMarkup = firstPlay
             ? '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Play</dt><dd class="text-right">'
-                + '<div class="text-gray-200">' + fmt(firstPlay.Date) + '</div>'
+                + '<div>' + onceUponDateLink(firstPlay.Date, 'text-cyan-300 hover:text-cyan-200 underline') + '</div>'
                 + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(firstPlay.game, firstPlay.Game, firstPlay.gameId) + '</div>'
                 + '</dd></div>'
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
 
         var lastPlayMarkup = lastPlay
             ? '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Play</dt><dd class="text-right">'
-                + '<div class="text-gray-200">' + fmt(lastPlay.Date) + '</div>'
+                + '<div>' + onceUponDateLink(lastPlay.Date, 'text-cyan-300 hover:text-cyan-200 underline') + '</div>'
                 + '<div class="text-xs text-gray-500 mt-0.5">' + gameLink(lastPlay.game, lastPlay.Game, lastPlay.gameId) + '</div>'
                 + '</dd></div>'
             : '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Play</dt><dd class="text-gray-600 text-right">—</dd></div>';
@@ -214,7 +224,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         + '<div class="text-sm font-medium">' + gameLink(entry.game, entry.gameName, entry.gameId) + '</div>'
                         + '<div class="mt-2 text-xs text-gray-400 space-y-1">'
                         + '<div class="flex justify-between gap-3"><span class="text-gray-500">High score</span><span class="text-emerald-400">' + escapeHTML(String(entry.score)) + '</span></div>'
-                        + '<div class="flex justify-between gap-3"><span class="text-gray-500">Last achieved</span><span>' + fmt(entry.lastAchievedOn) + '</span></div>'
+                        + '<div class="flex justify-between gap-3"><span class="text-gray-500">Last achieved</span><span>' + onceUponDateLink(entry.lastAchievedOn, 'text-cyan-300 hover:text-cyan-200 underline') + '</span></div>'
                         + '</div>'
                         + '</div>';
                 }).join('') + '</div>'
@@ -229,7 +239,7 @@ window.renderPlayerStatsTab = function renderPlayerStatsTab(options) {
                         ? String(play.matchingScore.score)
                         : null;
                     return '<div class="flex items-start gap-3 py-2 border-b border-gray-700/40 last:border-0 text-sm">'
-                        + '<span class="text-gray-500 shrink-0 w-24 tabular-nums">' + fmt(play.Date) + '</span>'
+                        + '<span class="shrink-0 w-24 tabular-nums">' + onceUponDateLink(play.Date, 'text-cyan-300 hover:text-cyan-200 underline') + '</span>'
                         + '<span class="flex-1 min-w-0">' + gameLink(play.game, play.Game, play.gameId) + '</span>'
                         + '<span class="text-gray-400 shrink-0">' + (scoreValue ? 'Score ' + escapeHTML(scoreValue) : 'No score') + '</span>'
                         + '<span class="' + (play.isWin ? 'text-amber-400' : 'text-gray-600') + ' shrink-0">' + (play.isWin ? '🏆 Win' : '') + '</span>'

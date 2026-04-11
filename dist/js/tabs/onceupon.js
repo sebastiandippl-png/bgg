@@ -1,5 +1,34 @@
-window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
+window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDate = null, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
     const cards = onceUponData && Array.isArray(onceUponData.cards) ? onceUponData.cards : [];
+    const dateSlugPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+    function normalizeDateKey(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(dateSlugPattern);
+        if (!match) {
+            return null;
+        }
+
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const parsed = new Date(year, month - 1, day);
+        if (Number.isNaN(parsed.getTime())) {
+            return null;
+        }
+
+        if (parsed.getFullYear() !== year || (parsed.getMonth() + 1) !== month || parsed.getDate() !== day) {
+            return null;
+        }
+
+        return raw;
+    }
+
+    const selectedDateKey = normalizeDateKey(selectedDate);
+    const isSingleDateMode = !!selectedDateKey;
+    const visibleCards = isSingleDateMode
+        ? cards.filter(card => card && card.isCustom)
+        : cards;
 
     function getPlayerKeyByName(name) {
         const normalizedName = String(name || '').trim().toLowerCase();
@@ -69,6 +98,16 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
         return escapeHTML(String(value));
     }
 
+    function renderOnceUponDateLink(dateValue) {
+        const normalizedDate = String(dateValue || '').trim();
+        const safeDate = escapeHTML(normalizedDate || '-');
+        if (!dateSlugPattern.test(normalizedDate)) {
+            return safeDate;
+        }
+
+        return '<a href="#onceupon/' + encodeURIComponent(normalizedDate) + '" class="text-cyan-300 hover:text-cyan-200 underline">' + safeDate + '</a>';
+    }
+
     function renderPlayCards(plays) {
         if (plays.length === 0) {
             return '<div class="p-4 text-gray-500 italic">🗂️ No plays recorded on this date.</div>';
@@ -118,7 +157,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
                     <div class="p-4">
                         <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${gameLink.href}"${gameLink.attrs} class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a>${gameLink.isExternal ? '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>' : ''}</h3>
                         <div class="text-sm text-gray-400 space-y-2">
-                            <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
+                            <p><span class="text-gray-500">📅 Date:</span> ${renderOnceUponDateLink(play.Date)}</p>
                             <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
                             <p><span class="text-gray-500">⭐ Avg / Geek:</span> ${ratingsMarkup}</p>
                             <p><span class="text-gray-500">👥 Players:</span> ${coPlayersMarkup}</p>
@@ -150,14 +189,14 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
                 <p class="text-xs text-gray-600 mt-2">Only dates with recorded plays are selectable.</p>
             </div>
             <div id="onceupon-custom-date-results">
-                <div class="px-4 pb-4 text-gray-500 italic text-sm">Pick a date above to see games played.</div>
+                <div class="px-4 pb-4 text-gray-500 italic text-sm">${isSingleDateMode ? 'Loading plays for selected date...' : 'Pick a date above to see games played.'}</div>
             </div>
         `;
     }
 
     const html = `
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            ${cards.map(card => {
+        <div class="grid grid-cols-1 ${isSingleDateMode ? '' : 'xl:grid-cols-2'} gap-4">
+            ${visibleCards.map(card => {
                 if (card.isCustom) {
                     return `
                         <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
@@ -240,6 +279,10 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, allPlayers
                 updateNavButtons(selectedDate);
             }
         });
+
+        if (selectedDateKey) {
+            fpInstance.setDate(selectedDateKey, true);
+        }
 
         if (prevDayBtn) {
             prevDayBtn.addEventListener('click', function () {

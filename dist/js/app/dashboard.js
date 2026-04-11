@@ -42,6 +42,42 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return slashIndex !== -1 ? decoded.slice(slashIndex + 1) : null;
     }
 
+    function normalizeDateSlug(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) {
+            return null;
+        }
+
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const parsed = new Date(year, month - 1, day);
+        if (Number.isNaN(parsed.getTime())) {
+            return null;
+        }
+
+        if (parsed.getFullYear() !== year || (parsed.getMonth() + 1) !== month || parsed.getDate() !== day) {
+            return null;
+        }
+
+        return raw;
+    }
+
+    function getOnceUponDateFromHash() {
+        const rawSubParam = getHashSubParam();
+        if (!rawSubParam) {
+            return null;
+        }
+
+        const slugParts = String(rawSubParam).split('/').filter(Boolean);
+        const candidate = slugParts.length === 0
+            ? ''
+            : (slugParts[0].toLowerCase() === 'date' ? slugParts[1] : slugParts[0]);
+
+        return normalizeDateSlug(candidate || '');
+    }
+
     function updateHashForTab(tabId) {
         let subParam = null;
         if (tabId === 'gamestats' && window.BGStatsGameStats && window.BGStatsGameStats.selectedGameId) {
@@ -367,6 +403,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         if (tabId === 'onceupon' && typeof window.renderOnceUponTab === 'function') {
             window.renderOnceUponTab({
                 onceUponData: window.BGStatsSelectors.getOnceUponViewModel(state),
+                selectedDate: getOnceUponDateFromHash(),
                 allPlayers: state.players,
                 escapeHTML,
                 isValidImageUrl,
@@ -587,6 +624,11 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 if (window.BGStatsPlayerStats) {
                     window.BGStatsPlayerStats.setSelectedPlayerKey(newPlayerKey);
                 }
+                switchTab(tabId, { skipHashUpdate: true });
+                return;
+            }
+
+            if (tabId === 'onceupon') {
                 switchTab(tabId, { skipHashUpdate: true });
                 return;
             }

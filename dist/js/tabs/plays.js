@@ -107,6 +107,17 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         return escapeHTML(String(value));
     }
 
+    function renderOnceUponDateLink(dateValue) {
+        const normalizedDate = String(dateValue || '').trim();
+        const safeDate = escapeHTML(normalizedDate || '-');
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
+            return safeDate;
+        }
+
+        const href = '#onceupon/' + encodeURIComponent(normalizedDate);
+        return '<a href="' + href + '" class="text-cyan-300 hover:text-cyan-200 underline">' + safeDate + '</a>';
+    }
+
     function getPlayThumbnailUrl(play) {
         const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
         const game = play && play.game;
@@ -269,7 +280,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
                 <div class="p-4">
                     <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${gameLink.href}"${gameLink.attrs} class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a>${gameLink.isExternal ? '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>' : ''}</h3>
                     <div class="text-sm text-gray-400 space-y-2">
-                        <p><span class="text-gray-500">📅 Date:</span> ${escapeHTML(play.Date)}</p>
+                        <p><span class="text-gray-500">📅 Date:</span> ${renderOnceUponDateLink(play.Date)}</p>
                         <p><span class="text-gray-500">⏱️ Duration:</span> ${escapeHTML(play.Duration)} min</p>
                         <p><span class="text-gray-500">⭐ Avg / Geek:</span> ${ratingsMarkup}</p>
                         <p><span class="text-gray-500">👥 Players:</span> ${coPlayersMarkup}</p>

@@ -1,5 +1,14 @@
 window.renderNextplayTab = function renderNextplayTab({ groups, escapeHTML, targetId = 'nextplay-content' }) {
 
+    function renderOnceUponDateLink(dateValue) {
+        const normalizedDate = String(dateValue || '').trim();
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
+            return escapeHTML(normalizedDate || 'Never played');
+        }
+
+        return `<a href="#onceupon/${encodeURIComponent(normalizedDate)}" class="text-cyan-300 hover:text-cyan-200 underline">${escapeHTML(normalizedDate)}</a>`;
+    }
+
     function generateNextplayCardsHTML(dataArray) {
         if (dataArray.length === 0) {
             return `<div class="p-4 text-gray-500 italic">🗂️ No games found in this category.</div>`;
@@ -38,7 +47,7 @@ window.renderNextplayTab = function renderNextplayTab({ groups, escapeHTML, targ
                             </div>
                             <div class="flex justify-between gap-3">
                                 <span class="text-gray-500">Last played</span>
-                                <span>${escapeHTML(lastPlayedDisplay)}</span>
+                                <span>${renderOnceUponDateLink(lastPlayedDisplay)}</span>
                             </div>
                             <div class="flex justify-between gap-3">
                                 <span class="text-gray-500">BGG Weight</span>

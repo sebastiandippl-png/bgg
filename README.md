@@ -58,6 +58,13 @@ WantToBuy price lookup behavior:
 
 Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
+The `OnceUpon` tab also supports a date slug: `#onceupon/YYYY-MM-DD` (for example `#onceupon/2026-04-12`).
+- In date-slug mode, the tab shows only the `Choose a Date` card
+- The date picker is prefilled with the slug date
+- Plays for that date are shown immediately
+
+Play-related date values now open this `OnceUpon` date-slug view across tabs, including `Last Plays`, `OnceUpon`, `Game Stats`, `Player Stats`, `Next`, and `WantTo`.
+
 The `Most Played` tab shows small rank-movement symbols in each weight category list:
 - `↑` = higher rank than the comparison period
 - `↓` = lower rank than the comparison period

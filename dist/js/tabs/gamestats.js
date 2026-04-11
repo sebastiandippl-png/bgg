@@ -173,6 +173,16 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
         return escapeHTML(Number(val).toFixed(decimals)) + ' min';
     }
 
+    function renderOnceUponDateLink(dateValue, fallbackText, className) {
+        var normalizedDate = String(dateValue || '').trim();
+        var safeLabel = escapeHTML(normalizedDate || (fallbackText || '\u2014'));
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
+            return '<span class="' + (className || 'text-gray-200') + '">' + safeLabel + '</span>';
+        }
+
+        return '<a href="#onceupon/' + encodeURIComponent(normalizedDate) + '" class="' + (className || 'text-cyan-300 hover:text-cyan-200 underline') + '">' + safeLabel + '</a>';
+    }
+
     function renderPlaysTimelineChart(plays) {
         var rows = Array.isArray(plays) ? plays : [];
         if (rows.length === 0) {
@@ -382,8 +392,8 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
             + '<h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">📊 Play Summary</h3>'
             + '<dl class="space-y-2 text-sm">'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Total Plays</dt><dd class="text-violet-400 font-bold text-right">' + escapeHTML(String(playCount)) + '</dd></div>'
-            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Played</dt><dd class="text-gray-200 text-right">' + fmt(lastPlayed) + '</dd></div>'
-            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Played</dt><dd class="text-gray-200 text-right">' + fmt(firstPlayed) + '</dd></div>'
+            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Last Played</dt><dd class="text-right">' + renderOnceUponDateLink(lastPlayed, '\u2014', 'text-cyan-300 hover:text-cyan-200 underline') + '</dd></div>'
+            + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">First Played</dt><dd class="text-right">' + renderOnceUponDateLink(firstPlayed, '\u2014', 'text-cyan-300 hover:text-cyan-200 underline') + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Shortest Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(shortestPlaytimeMin, 0) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Longest Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(longestPlaytimeMin, 0) + '</dd></div>'
             + '<div class="flex justify-between gap-2"><dt class="text-gray-500 shrink-0">Average Playtime</dt><dd class="text-gray-200 text-right">' + fmtDurationMin(averagePlaytimeMin, 1) + '</dd></div>'
@@ -451,7 +461,7 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                     : '<span class="text-gray-700 italic">No player data</span>';
 
                 return '<div class="flex items-start gap-3 py-2 border-b border-gray-700/40 last:border-0 text-sm">'
-                    + '<span class="text-gray-500 shrink-0 w-24 tabular-nums">' + escapeHTML(String(play.Date || '\u2014')) + '</span>'
+                    + '<span class="shrink-0 w-24 tabular-nums">' + renderOnceUponDateLink(play.Date, '\u2014', 'text-cyan-300 hover:text-cyan-200 underline') + '</span>'
                     + '<span class="text-gray-600 shrink-0 w-16 tabular-nums">' + (play.Duration ? escapeHTML(String(play.Duration)) + '\u00a0min' : '') + '</span>'
                     + '<span class="flex-1 flex flex-wrap gap-x-1.5 gap-y-0.5">' + playerCells + '</span>'
                     + '</div>';

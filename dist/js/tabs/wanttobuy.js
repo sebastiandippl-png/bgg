@@ -65,6 +65,15 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
         return escapeHTML(String(value)) + (suffix ? suffix : '');
     }
 
+    function renderOnceUponDateLink(dateValue) {
+        var normalizedDate = String(dateValue || '').trim();
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
+            return renderValue(dateValue);
+        }
+
+        return '<a href="#onceupon/' + encodeURIComponent(normalizedDate) + '" class="text-cyan-300 hover:text-cyan-200 underline">' + escapeHTML(normalizedDate) + '</a>';
+    }
+
     function renderGameCard(game, showPrice) {
         var placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
         var thumbnailUrl = game.urlThumb && isValidImageUrl(game.urlThumb) ? game.urlThumb : placeholderSvg;
@@ -100,7 +109,7 @@ window.renderWantToBuyTab = function renderWantToBuyTab(options) {
             + '</div>'
             + '<div class="mt-2 flex flex-wrap gap-1.5">' + renderCollectionBadges(game) + '</div>'
             + '<dl class="mt-3 space-y-1.5 text-sm">'
-            + '<div class="flex justify-between gap-3"><dt class="text-gray-500">Last Played</dt><dd class="text-gray-200 text-right">' + renderValue(game.lastPlayed) + '</dd></div>'
+            + '<div class="flex justify-between gap-3"><dt class="text-gray-500">Last Played</dt><dd class="text-right">' + renderOnceUponDateLink(game.lastPlayed) + '</dd></div>'
             + priceRow
             + '</dl>'
             + '</div>'
