@@ -31,12 +31,52 @@ Typical states:
 - `complete`
 - `error`
 
+### GET /api/trigger_last_plays.php
+API key-protected endpoint to trigger a last plays sync.
+
+Query Parameters:
+- `apiKey` (required): The API key configured in `BGSTATS_API_KEY`.
+
+Behavior:
+- Fetches plays from the last 7 days from BGG.
+- Appends new plays to the existing database.
+- Returns a JSON response with sync results.
+- Prevents accidental triggering by bots through API key requirement.
+
+Example:
+```bash
+curl "https://your-domain.com/api/trigger_last_plays.php?apiKey=YOUR_API_KEY"
+```
+
+Response on success:
+```json
+{
+  "success": true,
+  "step": "last_week_plays",
+  "username": "your-bgg-username",
+  "lookbackDays": 7,
+  "minDate": "2026-04-09",
+  "insertedGames": 0,
+  "insertedPlays": 5,
+  "fetchedPlays": 10,
+  "publishDb": true,
+  "syncedAt": "2026-04-16T14:30:00+00:00"
+}
+```
+
+Error responses:
+- `401 Unauthorized`: Missing or invalid API key
+- `405 Method Not Allowed`: Request was not GET
+- `409 Conflict`: Sync already running
+- `500 Internal Server Error`: BGG sync failed
+
 ## Environment Variables
 
 - `BGSTATS_BGG_USERNAME`: BGG username whose collection and plays are synced.
 - `BGSTATS_BGG_API_KEY`: Token used for BGG requests.
 - `BGSTATS_GOOGLE_CLIENT_ID`: Google OAuth client ID for admin login.
 - `BGSTATS_ADMIN_EMAIL`: Email address of the admin user.
+- `BGSTATS_API_KEY`: API key for `trigger_last_plays.php` endpoint.
 
 ## Local Config Fallback (No Env Vars)
 

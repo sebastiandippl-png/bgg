@@ -8,6 +8,9 @@ return [
     'BGSTATS_BGG_API_KEY' => '',
     'BGSTATS_GOOGLE_CLIENT_ID' => '',
     'BGSTATS_ADMIN_EMAIL' => '',
+    // API key for triggering last plays sync endpoint (trigger_last_plays.php)
+    // Generate a strong random key and keep it private. Used as ?apiKey=YOUR_KEY query parameter
+    'BGSTATS_API_KEY' => '',
     // Optional: comma-separated list, e.g. 'https://dashboard.example.com,https://www.example.com'
     'BGSTATS_ALLOWED_ORIGINS' => '',
     //URL where this app is hosted
