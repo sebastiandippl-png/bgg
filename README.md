@@ -18,6 +18,8 @@ This is just a toy project to learn different things for me. Hence there are ton
 3. Run `Get Games`, then `Get Game Metadata`, then `Get Plays + Build DB`.
 4. The backend fetches data for the BGG user configured via `BGSTATS_BGG_USERNAME` (env var or `local_config.php`) and publishes a rebuilt `dist/bgg.db`.
 
+**Note:** On slower connections (e.g., mobile networks), a loading spinner animation will display while the database is being fetched and loaded into the browser.
+
 For incremental updates after a full sync, use the Delta Sync card:
 - `Get New Games`: fetches the current BGG collection, inserts missing games, overwrites changed collection status flags on existing games, and removes games that are no longer in the collection (no DB rebuild)
 - `Game Metadata Delta Sync`: fills missing metadata for games in the existing DB

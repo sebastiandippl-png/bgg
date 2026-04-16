@@ -143,6 +143,20 @@ window.BGStatsDashboard = (function createDashboardModule() {
         target.textContent = `Last synced: ${value ? formatDateTime(value) : 'unknown'}`;
     }
 
+    function showLoadingSpinner() {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.classList.remove('hidden');
+        }
+    }
+
+    function hideLoadingSpinner() {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.classList.add('hidden');
+        }
+    }
+
     function getSyncProgressElements() {
         return {
             shell: document.getElementById('sync-progress-shell'),
@@ -955,6 +969,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     }
 
     function hydrateDatabase(database) {
+        hideLoadingSpinner();
         db = database;
         store.replaceData(window.BGStatsData.loadDashboardData(db));
 
@@ -991,13 +1006,19 @@ window.BGStatsDashboard = (function createDashboardModule() {
         updateLastSyncedInfo();
         await initSqlEngine();
 
+        // Show loading spinner before fetching database
+        showLoadingSpinner();
+
         try {
             const database = await loadDatabaseFromServer();
             if (database) {
                 hydrateDatabase(database);
+            } else {
+                hideLoadingSpinner();
             }
         } catch (error) {
             console.warn('Database load error:', error);
+            hideLoadingSpinner();
         }
     }
 
