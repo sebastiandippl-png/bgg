@@ -270,6 +270,28 @@ CREATE TABLE games (
 - Backend: `dist/api/get_funtainment_prices.php`
 - Frontend tab rendering: `dist/js/tabs/wanttobuy.js`
 
+### Next Tab Random Picks Should Reuse Filtered Category Data
+
+**Implementation note**: Build `Random pick per category` from the already computed Next-tab groups in the renderer instead of re-filtering from raw state.
+
+**Why**:
+- Keeps random picks aligned with exactly what each category currently shows
+- Avoids duplicated filtering logic and drift between summary and main list
+
+### Next Tab Random Picks Need Stable UI State
+
+**Implementation note**: Keep selected random game IDs in dashboard state and pass them into the Next renderer.
+
+**Why**:
+- Prevents visual reshuffling on incidental rerenders while staying on the same Next view
+- Allows explicit reroll when the user clicks the `Next` tab again
+
+**Code Locations**:
+- `dist/js/app/dashboard.js`
+- `dist/js/tabs/nextplay.js`
+
+**Code Location**: `dist/js/tabs/nextplay.js`
+
 ### Issue: Plays Count Mismatch (3763 vs 3972)
 
 **Root Cause**: Frontend `loadPlays()` used INNER JOIN, silently dropping 209 unmatched plays.

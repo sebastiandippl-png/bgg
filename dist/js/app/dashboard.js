@@ -4,6 +4,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     let SQL = null;
     let lastSyncedAt = null;
     let activeTabId = 'insights';
+    let nextplayRandomPickIdsByGroupId = {};
     const SYNC_BGG_GAMES_URL = 'api/sync_bgg_games.php';
     const SYNC_BGG_NEW_GAMES_URL = 'api/sync_bgg_new_games.php';
     const SYNC_BGG_METADATA_URL = 'api/sync_bgg_metadata.php';
@@ -385,7 +386,42 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return null;
     }
 
-    function renderTab(tabId) {
+    function buildNextplayRandomPickMap(groups, previousMap = {}, forceRefresh = false) {
+        const nextMap = {};
+
+        (groups || []).forEach(group => {
+            const games = Array.isArray(group.games) ? group.games : [];
+            if (games.length === 0) {
+                return;
+            }
+
+            let selectedGameId = null;
+            if (!forceRefresh && previousMap && previousMap[group.id]) {
+                const previousId = String(previousMap[group.id]);
+                const match = games.find(game => String(game.id || '') === previousId);
+                if (match && match.id) {
+                    selectedGameId = String(match.id);
+                }
+            }
+
+            if (!selectedGameId) {
+                const randomIndex = Math.floor(Math.random() * games.length);
+                const randomGame = games[randomIndex] || null;
+                if (randomGame && randomGame.id) {
+                    selectedGameId = String(randomGame.id);
+                }
+            }
+
+            if (selectedGameId) {
+                nextMap[group.id] = selectedGameId;
+            }
+        });
+
+        return nextMap;
+    }
+
+    function renderTab(tabId, options = {}) {
+        const { forceRefreshRandomPicks = false } = options;
         const state = store.getState();
 
         if (tabId === 'insights' && typeof window.renderInsightsTab === 'function') {
@@ -438,8 +474,14 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
         if (tabId === 'nextplay' && typeof window.renderNextplayTab === 'function') {
             const viewModel = window.BGStatsSelectors.getNextplayViewModel(state);
+            nextplayRandomPickIdsByGroupId = buildNextplayRandomPickMap(
+                viewModel.groups,
+                nextplayRandomPickIdsByGroupId,
+                forceRefreshRandomPicks
+            );
             window.renderNextplayTab({
                 groups: viewModel.groups,
+                randomPickIdsByGroupId: nextplayRandomPickIdsByGroupId,
                 sortConfig: viewModel.sortConfig,
                 escapeHTML,
                 targetId: 'nextplay-content'
@@ -545,7 +587,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     }
 
     function switchTab(tabId, options = {}) {
-        const { skipHashUpdate = false } = options;
+        const { skipHashUpdate = false, forceRefreshRandomPicks = false } = options;
 
         if (!TAB_IDS.has(tabId)) {
             tabId = 'insights';
@@ -558,7 +600,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
         activeTabId = tabId;
         setActiveTabStyles(tabId);
 
-        renderTab(tabId);
+        renderTab(tabId, { forceRefreshRandomPicks });
         scrollToPageTop();
     }
 
@@ -598,7 +640,8 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 }
 
                 event.preventDefault();
-                switchTab(button.dataset.tabId);
+                const nextTabId = button.dataset.tabId;
+                switchTab(nextTabId, { forceRefreshRandomPicks: nextTabId === 'nextplay' });
                 closeMobileMenu();
             });
         }

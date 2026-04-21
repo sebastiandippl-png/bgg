@@ -138,6 +138,16 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 - Cache behavior: `get_funtainment_prices.php` stores one file per normalized game name with a 24-hour TTL
 - Search normalization: when a game name includes `:`, only the substring before `:` is used for Funtainment search
 
+### Next Tab Flow
+
+- Selector: `getNextplayViewModel(state)` in `dist/js/app/selectors.js`
+- Renderer: `renderNextplayTab(...)` in `dist/js/tabs/nextplay.js`
+- Data source: `state.games` filtered to owned base games not played in over a year (or never played)
+- Grouping: three weight buckets (`complex`, `medium`, `light`) sorted by longest-not-played first
+- Category headers: each group title includes the current game count (`N games`)
+- Top summary: renderer selects one random game from each non-empty category and displays it in a `Random pick per category` card list linked to Game Stats
+- Random-pick state: dashboard stores selected game IDs per category so picks remain stable across rerenders; clicking the `Next` tab explicitly triggers a reroll
+
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html
 <button onclick="syncGames()">Get Games</button>

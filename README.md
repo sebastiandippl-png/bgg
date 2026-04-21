@@ -67,6 +67,11 @@ The `OnceUpon` tab also supports a date slug: `#onceupon/YYYY-MM-DD` (for exampl
 
 Play-related date values now open this `OnceUpon` date-slug view across tabs, including `Last Plays`, `OnceUpon`, `Game Stats`, `Player Stats`, `Next`, and `WantTo`.
 
+The `Next` tab now shows:
+- a game count per weight category directly in each category header
+- a `Random pick per category` section at the top with one randomly selected game from each non-empty category (linked to Game Stats)
+- random picks stay stable while you remain on the current Next view and reroll when you click the `Next` tab again
+
 The `Most Played` tab shows small rank-movement symbols in each weight category list:
 - `↑` = higher rank than the comparison period
 - `↓` = lower rank than the comparison period
