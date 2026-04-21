@@ -386,8 +386,67 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return null;
     }
 
+    function parsePlayerCountSpec(value) {
+        const raw = String(value || '').trim();
+        if (!raw) {
+            return null;
+        }
+
+        const normalized = raw.replace(/\s+/g, '').replace(/–/g, '-');
+        if (/^\d+$/.test(normalized)) {
+            const exact = Number(normalized);
+            if (Number.isInteger(exact) && exact > 0) {
+                return { min: exact, max: exact };
+            }
+        }
+
+        const rangeMatch = normalized.match(/^(\d+)-(\d+)$/);
+        if (!rangeMatch) {
+            return null;
+        }
+
+        const min = Number(rangeMatch[1]);
+        const max = Number(rangeMatch[2]);
+        if (!Number.isInteger(min) || !Number.isInteger(max) || min <= 0 || max <= 0) {
+            return null;
+        }
+
+        return { min: Math.min(min, max), max: Math.max(min, max) };
+    }
+
+    function gameSupportsTargetPlayers(game, targetPlayers) {
+        const bestSpec = parsePlayerCountSpec(game.bestWith);
+        if (bestSpec && bestSpec.min <= targetPlayers && bestSpec.max >= targetPlayers) {
+            return true;
+        }
+
+        const recommendedSpec = parsePlayerCountSpec(game.recommendedWith);
+        if (recommendedSpec && recommendedSpec.min <= targetPlayers && recommendedSpec.max >= targetPlayers) {
+            return true;
+        }
+
+        const minPlayers = Number(game.minPlayers);
+        const maxPlayers = Number(game.maxPlayers);
+        if (Number.isFinite(minPlayers) && Number.isFinite(maxPlayers) && minPlayers > 0 && maxPlayers > 0) {
+            return minPlayers <= targetPlayers && maxPlayers >= targetPlayers;
+        }
+
+        return false;
+    }
+
+    function pickRandomGameIdFromList(games) {
+        if (!Array.isArray(games) || games.length === 0) {
+            return null;
+        }
+
+        const randomIndex = Math.floor(Math.random() * games.length);
+        const randomGame = games[randomIndex] || null;
+        return randomGame && randomGame.id ? String(randomGame.id) : null;
+    }
+
     function buildNextplayRandomPickMap(groups, previousMap = {}, forceRefresh = false) {
         const nextMap = {};
+        const targetPlayersList = [2, 3, 4];
 
         (groups || []).forEach(group => {
             const games = Array.isArray(group.games) ? group.games : [];
@@ -395,25 +454,41 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 return;
             }
 
-            let selectedGameId = null;
-            if (!forceRefresh && previousMap && previousMap[group.id]) {
-                const previousId = String(previousMap[group.id]);
-                const match = games.find(game => String(game.id || '') === previousId);
-                if (match && match.id) {
-                    selectedGameId = String(match.id);
-                }
-            }
+            const picksForGroup = {};
+            const usedGameIds = new Set();
 
-            if (!selectedGameId) {
-                const randomIndex = Math.floor(Math.random() * games.length);
-                const randomGame = games[randomIndex] || null;
-                if (randomGame && randomGame.id) {
-                    selectedGameId = String(randomGame.id);
-                }
-            }
+            targetPlayersList.forEach(targetPlayers => {
+                let selectedGameId = null;
+                const previousId = !forceRefresh && previousMap && previousMap[group.id] && previousMap[group.id][targetPlayers]
+                    ? String(previousMap[group.id][targetPlayers])
+                    : null;
 
-            if (selectedGameId) {
-                nextMap[group.id] = selectedGameId;
+                if (previousId) {
+                    const previousGame = games.find(game => String(game.id || '') === previousId);
+                    if (previousGame && previousGame.id && gameSupportsTargetPlayers(previousGame, targetPlayers)) {
+                        selectedGameId = String(previousGame.id);
+                    }
+                }
+
+                if (!selectedGameId) {
+                    const eligibleGames = games.filter(game => gameSupportsTargetPlayers(game, targetPlayers));
+                    const eligibleWithoutUsed = eligibleGames.filter(game => !usedGameIds.has(String(game.id || '')));
+                    selectedGameId = pickRandomGameIdFromList(eligibleWithoutUsed) || pickRandomGameIdFromList(eligibleGames);
+                }
+
+                if (!selectedGameId) {
+                    const fallbackWithoutUsed = games.filter(game => !usedGameIds.has(String(game.id || '')));
+                    selectedGameId = pickRandomGameIdFromList(fallbackWithoutUsed) || pickRandomGameIdFromList(games);
+                }
+
+                if (selectedGameId) {
+                    picksForGroup[targetPlayers] = selectedGameId;
+                    usedGameIds.add(selectedGameId);
+                }
+            });
+
+            if (Object.keys(picksForGroup).length > 0) {
+                nextMap[group.id] = picksForGroup;
             }
         });
 

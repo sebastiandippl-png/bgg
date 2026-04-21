@@ -69,7 +69,7 @@ Play-related date values now open this `OnceUpon` date-slug view across tabs, in
 
 The `Next` tab now shows:
 - a game count per weight category directly in each category header
-- a `Random pick per category` section at the top with one randomly selected game from each non-empty category (linked to Game Stats)
+- a `Random picks per category` section at the top with three picks per non-empty category: best for 2, 3, and 4 players (linked to Game Stats)
 - random picks stay stable while you remain on the current Next view and reroll when you click the `Next` tab again
 
 The `Most Played` tab shows small rank-movement symbols in each weight category list:

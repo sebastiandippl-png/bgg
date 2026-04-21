@@ -4,15 +4,6 @@ window.renderNextplayTab = function renderNextplayTab({ groups, randomPickIdsByG
         return `${count} ${count === 1 ? 'game' : 'games'}`;
     }
 
-    function pickRandomGame(games) {
-        if (!Array.isArray(games) || games.length === 0) {
-            return null;
-        }
-
-        const randomIndex = Math.floor(Math.random() * games.length);
-        return games[randomIndex] || null;
-    }
-
     function renderOnceUponDateLink(dateValue) {
         const normalizedDate = String(dateValue || '').trim();
         if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(normalizedDate)) {
@@ -84,25 +75,40 @@ window.renderNextplayTab = function renderNextplayTab({ groups, randomPickIdsByG
         return html;
     }
 
+    function getTargetPlayersLabel(playerCount) {
+        return `Best for ${playerCount} players`;
+    }
+
     function generateRandomPicksHTML(groupArray, selectedIdsByGroupId) {
+        const targetPlayersList = [2, 3, 4];
         const picks = groupArray
             .map(group => {
                 const games = group.games || [];
-                const selectedId = selectedIdsByGroupId && selectedIdsByGroupId[group.id]
-                    ? String(selectedIdsByGroupId[group.id])
-                    : null;
-                const selectedGame = selectedId
-                    ? games.find(game => String(game.id || '') === selectedId)
-                    : null;
+
+                const picksByTarget = targetPlayersList.map(targetPlayers => {
+                    const selectedId = selectedIdsByGroupId
+                        && selectedIdsByGroupId[group.id]
+                        && selectedIdsByGroupId[group.id][targetPlayers]
+                        ? String(selectedIdsByGroupId[group.id][targetPlayers])
+                        : null;
+                    const selectedGame = selectedId
+                        ? games.find(game => String(game.id || '') === selectedId)
+                        : null;
+
+                    return {
+                        targetPlayers,
+                        game: selectedGame || null
+                    };
+                }).filter(entry => entry.game);
 
                 return {
                     id: group.id,
                     title: group.title,
                     titleClass: group.titleClass,
-                    game: selectedGame || pickRandomGame(games)
+                    picksByTarget
                 };
             })
-            .filter(entry => entry.game);
+            .filter(entry => entry.picksByTarget.length > 0);
 
         if (picks.length === 0) {
             return '';
@@ -110,24 +116,33 @@ window.renderNextplayTab = function renderNextplayTab({ groups, randomPickIdsByG
 
         return `
             <div class="mb-6 bg-gray-900 rounded-lg border border-gray-700 p-4">
-                <h3 class="text-lg font-semibold text-gray-100 mb-3">Random pick per category</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                <h3 class="text-lg font-semibold text-gray-100 mb-3">Random picks per category (Best for 2/3/4 players)</h3>
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
                     ${picks.map(entry => {
-                        const game = entry.game;
-                        const statsUrl = game.id ? `#gamestats/${encodeURIComponent(game.id)}` : '#';
-                        const thumb = game.urlThumb ? String(game.urlThumb) : '';
                         return `
                             <article class="rounded-lg border border-gray-700 bg-gray-800/60 p-3">
-                                <p class="text-xs font-semibold ${entry.titleClass} mb-2">${escapeHTML(entry.title)}</p>
-                                <div class="flex items-start gap-3 min-h-[56px]">
-                                    <div class="w-12 h-12 shrink-0 rounded border border-gray-700 bg-gray-900/70 overflow-hidden flex items-center justify-center p-1">
-                                        ${thumb
-                                            ? `<img src="${escapeHTML(thumb)}" alt="${escapeHTML(game.name)}" class="max-w-full max-h-full object-contain" loading="lazy">`
-                                            : '<span class="text-[10px] text-gray-500">No Image</span>'}
-                                    </div>
-                                    <a href="${statsUrl}" class="text-sm text-blue-300 hover:text-blue-200 underline font-semibold break-words">
-                                        ${escapeHTML(game.name)}
-                                    </a>
+                                <p class="text-xs font-semibold ${entry.titleClass} mb-3">${escapeHTML(entry.title)}</p>
+                                <div class="space-y-3">
+                                    ${entry.picksByTarget.map(pick => {
+                                        const game = pick.game;
+                                        const statsUrl = game.id ? `#gamestats/${encodeURIComponent(game.id)}` : '#';
+                                        const thumb = game.urlThumb ? String(game.urlThumb) : '';
+                                        return `
+                                            <div class="rounded border border-gray-700/70 bg-gray-900/50 p-2">
+                                                <p class="text-[11px] text-gray-400 mb-1">${escapeHTML(getTargetPlayersLabel(pick.targetPlayers))}</p>
+                                                <div class="flex items-start gap-2 min-h-[48px]">
+                                                    <div class="w-10 h-10 shrink-0 rounded border border-gray-700 bg-gray-900/70 overflow-hidden flex items-center justify-center p-1">
+                                                        ${thumb
+                                                            ? `<img src="${escapeHTML(thumb)}" alt="${escapeHTML(game.name)}" class="max-w-full max-h-full object-contain" loading="lazy">`
+                                                            : '<span class="text-[9px] text-gray-500">No Image</span>'}
+                                                    </div>
+                                                    <a href="${statsUrl}" class="text-sm text-blue-300 hover:text-blue-200 underline font-semibold break-words leading-snug">
+                                                        ${escapeHTML(game.name)}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </article>
                         `;

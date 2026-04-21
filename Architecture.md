@@ -145,8 +145,9 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 - Data source: `state.games` filtered to owned base games not played in over a year (or never played)
 - Grouping: three weight buckets (`complex`, `medium`, `light`) sorted by longest-not-played first
 - Category headers: each group title includes the current game count (`N games`)
-- Top summary: renderer selects one random game from each non-empty category and displays it in a `Random pick per category` card list linked to Game Stats
-- Random-pick state: dashboard stores selected game IDs per category so picks remain stable across rerenders; clicking the `Next` tab explicitly triggers a reroll
+- Top summary: renderer shows three random picks per non-empty category in a `Random picks per category` card list (`Best for 2 players`, `Best for 3 players`, `Best for 4 players`) linked to Game Stats
+- Pick selection priority for each target player count: `best_with` match first, then `recommended_with`, then min/max player range fallback
+- Random-pick state: dashboard stores selected game IDs per category and target player count so picks remain stable across rerenders; clicking the `Next` tab explicitly triggers a reroll
 
 **Frontend** (`dist/bgstats-dashboard.html`):
 ```html

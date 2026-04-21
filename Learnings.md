@@ -46,6 +46,24 @@ Request 2: collection endpoint with subtype=boardgameexpansion
 - Backend: `dist/api/bgg_sync_service.php` → `fetch_plays_from_bgg()` emits progress after each page fetch
 - Frontend: `dist/js/app/dashboard.js` → progress model handles "unknown total" phase
 
+### Next Tab 2/3/4 Picks Need Match Priority + Fallbacks
+
+**Implementation note**: For each category, choose random picks for target player counts 2, 3, and 4 with a clear priority.
+
+**Selection priority per target**:
+- `best_with` includes target player count
+- otherwise `recommended_with` includes target player count
+- otherwise game supports target via `minPlayers..maxPlayers`
+- if still nothing matches, fallback to any game in the category
+
+**Why**:
+- Keeps the picks aligned with BGG player-count guidance when available
+- Guarantees three visible picks per non-empty category even with sparse metadata
+
+**Code Locations**:
+- `dist/js/app/dashboard.js`
+- `dist/js/tabs/nextplay.js`
+
 ---
 
 #### 4. Play Records May Have Missing Player Data
@@ -272,7 +290,7 @@ CREATE TABLE games (
 
 ### Next Tab Random Picks Should Reuse Filtered Category Data
 
-**Implementation note**: Build `Random pick per category` from the already computed Next-tab groups in the renderer instead of re-filtering from raw state.
+**Implementation note**: Build `Random picks per category` from the already computed Next-tab groups in the renderer instead of re-filtering from raw state.
 
 **Why**:
 - Keeps random picks aligned with exactly what each category currently shows
@@ -289,8 +307,6 @@ CREATE TABLE games (
 **Code Locations**:
 - `dist/js/app/dashboard.js`
 - `dist/js/tabs/nextplay.js`
-
-**Code Location**: `dist/js/tabs/nextplay.js`
 
 ### Issue: Plays Count Mismatch (3763 vs 3972)
 
