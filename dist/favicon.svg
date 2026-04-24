@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Head -->
+  <circle cx="50" cy="18" r="14" fill="#4ade80"/>
+  <!-- Body with arms and legs -->
+  <path fill="#4ade80" d="
+    M30 37
+    C18 37 8 44 11 56
+    C13 64 24 61 28 59
+    L33 90 L45 90 L50 66 L55 90 L67 90 L72 59
+    C76 61 87 64 89 56
+    C92 44 82 37 70 37
+    C66 31 58 28 50 28
+    C42 28 34 31 30 37Z
+  "/>
+</svg>
