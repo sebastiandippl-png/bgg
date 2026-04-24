@@ -414,21 +414,10 @@ window.BGStatsDashboard = (function createDashboardModule() {
         return { min: Math.min(min, max), max: Math.max(min, max) };
     }
 
-    function gameSupportsTargetPlayers(game, targetPlayers) {
+    function gameMatchesBestWithTargetPlayers(game, targetPlayers) {
         const bestSpec = parsePlayerCountSpec(game.bestWith);
         if (bestSpec && bestSpec.min <= targetPlayers && bestSpec.max >= targetPlayers) {
             return true;
-        }
-
-        const recommendedSpec = parsePlayerCountSpec(game.recommendedWith);
-        if (recommendedSpec && recommendedSpec.min <= targetPlayers && recommendedSpec.max >= targetPlayers) {
-            return true;
-        }
-
-        const minPlayers = Number(game.minPlayers);
-        const maxPlayers = Number(game.maxPlayers);
-        if (Number.isFinite(minPlayers) && Number.isFinite(maxPlayers) && minPlayers > 0 && maxPlayers > 0) {
-            return minPlayers <= targetPlayers && maxPlayers >= targetPlayers;
         }
 
         return false;
@@ -465,20 +454,15 @@ window.BGStatsDashboard = (function createDashboardModule() {
 
                 if (previousId) {
                     const previousGame = games.find(game => String(game.id || '') === previousId);
-                    if (previousGame && previousGame.id && gameSupportsTargetPlayers(previousGame, targetPlayers)) {
+                    if (previousGame && previousGame.id && gameMatchesBestWithTargetPlayers(previousGame, targetPlayers)) {
                         selectedGameId = String(previousGame.id);
                     }
                 }
 
                 if (!selectedGameId) {
-                    const eligibleGames = games.filter(game => gameSupportsTargetPlayers(game, targetPlayers));
+                    const eligibleGames = games.filter(game => gameMatchesBestWithTargetPlayers(game, targetPlayers));
                     const eligibleWithoutUsed = eligibleGames.filter(game => !usedGameIds.has(String(game.id || '')));
                     selectedGameId = pickRandomGameIdFromList(eligibleWithoutUsed) || pickRandomGameIdFromList(eligibleGames);
-                }
-
-                if (!selectedGameId) {
-                    const fallbackWithoutUsed = games.filter(game => !usedGameIds.has(String(game.id || '')));
-                    selectedGameId = pickRandomGameIdFromList(fallbackWithoutUsed) || pickRandomGameIdFromList(games);
                 }
 
                 if (selectedGameId) {

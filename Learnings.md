@@ -48,16 +48,14 @@ Request 2: collection endpoint with subtype=boardgameexpansion
 
 ### Next Tab 2/3/4 Picks Need Match Priority + Fallbacks
 
-**Implementation note**: For each category, choose random picks for target player counts 2, 3, and 4 with a clear priority.
+**Implementation note**: For each category, choose random picks for target player counts 2, 3, and 4 only from games whose `best_with` value includes that target.
 
-**Selection priority per target**:
+**Selection rule per target**:
 - `best_with` includes target player count
-- otherwise `recommended_with` includes target player count
-- otherwise game supports target via `minPlayers..maxPlayers`
-- if still nothing matches, fallback to any game in the category
+- otherwise no random pick is shown for that target in that category
 
 **Why**:
-- Keeps the picks aligned with BGG player-count guidance when available
+- Prevents games from appearing under the wrong `Best for 2/3/4 players` heading
 - Guarantees three visible picks per non-empty category even with sparse metadata
 
 **Code Locations**:
