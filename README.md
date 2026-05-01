@@ -46,6 +46,8 @@ The `Last Plays` tab now includes a monthly thumbnail collage card for the previ
 - badge markers for most played game (`🏆`) and most time spent game (`⌚`)
 - inline summary of total plays and unique games in that month
 
+For plays that reference games outside your current collection, the `Last Plays` and `OnceUpon` tabs load box art on demand from BGG via `dist/api/get_game_image.php` and replace placeholder images after render.
+
 The `WantToBuy` tab lists all games where `want_to_buy=1`, including box art, collection-status badges, key metadata, the cached Brettspielpreise best offer, and a compact top-5 Funtainment price list per game.
 
 The `Player Stats` detail view shows both metrics:

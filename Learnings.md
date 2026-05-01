@@ -203,6 +203,43 @@ CREATE TABLE games (
 
 ## Known Issues & Solutions
 
+### Issue: Plays for Non-Collection Games Show Placeholder Box Art
+
+**Symptom**: `Last Plays` cards and monthly collage entries for unmatched/non-owned plays show only placeholder images.
+
+**Solution**:
+- Render placeholders first, then hydrate thumbnails asynchronously via `dist/api/get_game_image.php?id=<bggId>`.
+- Extract BGG ID from either `play.game.bggId` or `play.gameId` (`bgg_<id>` format).
+- Cache resolved URLs and in-flight requests in frontend Maps to prevent repeated fetches per render.
+
+**Code Locations**: `dist/js/tabs/plays.js`, `dist/js/tabs/onceupon.js`.
+
+### Issue: BGG Thumbnail URLs May Be Returned As HTTP
+
+**Symptom**: Dynamic thumbnail API returns a valid image URL, but frontend still keeps placeholder when URL validation requires `https`.
+
+**Solution**:
+- Normalize BGG thumbnail URLs from `http://` to `https://` before returning API payloads.
+- Also normalize in frontend dynamic-image hydration before validation.
+
+**Code Locations**: `dist/api/get_game_image.php`, `dist/js/tabs/plays.js`.
+
+### Issue: Dynamic Thumbnail Endpoint Returned False 404
+
+**Symptom**: `api/get_game_image.php?id=<bggId>` responds with `404 game_not_found` for valid games.
+
+**Root causes**:
+- Request was sent without API key (BGG can answer `401 Unauthorized`).
+- Temporary upstream statuses (`202`, `429`, `503`) were treated as hard not-found.
+- Restrictive `type=boardgame` filter can exclude valid thing items.
+
+**Solution**:
+- Call `bgg_http_get('thing', ['id' => $gameId])` with default API-key behavior.
+- Retry short backoff for `202/429/503`.
+- Return `502` for upstream authorization/availability issues instead of false `404`.
+
+**Code Location**: `dist/api/get_game_image.php`.
+
 ### OnceUpon Uses Exact Date Keys, Not Week Buckets
 
 **Requirement**: Show plays for "today one week/year/five years ago".

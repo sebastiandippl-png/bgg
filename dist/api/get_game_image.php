@@ -11,6 +11,19 @@ header('X-Content-Type-Options: nosniff');
 header('Cache-Control: max-age=86400');
 header('Access-Control-Allow-Origin: *');
 
+function normalize_bgg_image_url(string $url): string {
+    $normalized = trim($url);
+    if ($normalized === '') {
+        return '';
+    }
+
+    if (strpos($normalized, 'http://') === 0) {
+        return 'https://' . substr($normalized, 7);
+    }
+
+    return $normalized;
+}
+
 try {
     // Get game ID from query parameter
     $gameId = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
@@ -35,18 +48,40 @@ try {
     if (is_file($cacheFile) && is_readable($cacheFile)) {
         $cachedData = json_decode(file_get_contents($cacheFile), true);
         if (is_array($cachedData) && isset($cachedData['urlThumb'])) {
+            $cachedUrl = normalize_bgg_image_url((string)$cachedData['urlThumb']);
             http_response_code(200);
-            echo json_encode(['success' => true, 'urlThumb' => $cachedData['urlThumb']]);
+            echo json_encode(['success' => true, 'urlThumb' => $cachedUrl]);
             exit;
         }
     }
 
-    // Fetch from BGG API
-    $response = bgg_http_get('thing', ['id' => $gameId, 'type' => 'boardgame'], false);
+    // Fetch from BGG API with short retries for temporary upstream states.
+    $response = ['status' => 0, 'body' => ''];
+    $maxAttempts = 3;
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $response = bgg_http_get('thing', ['id' => $gameId]);
+        if ($response['status'] === 200) {
+            break;
+        }
 
-    if ($response['status'] !== 200) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'game_not_found', 'http_status' => $response['status']]);
+        $shouldRetry = in_array($response['status'], [202, 429, 503], true);
+        if (!$shouldRetry || $attempt === $maxAttempts) {
+            break;
+        }
+
+        sleep($attempt);
+    }
+
+    if ($response['status'] === 401) {
+        http_response_code(502);
+        echo json_encode(['success' => false, 'error' => 'bgg_unauthorized', 'http_status' => 401]);
+        exit;
+    }
+
+    if (trim((string)$response['body']) === '' && $response['status'] !== 200) {
+        $httpStatus = $response['status'] === 404 ? 404 : 502;
+        http_response_code($httpStatus);
+        echo json_encode(['success' => false, 'error' => $httpStatus === 404 ? 'game_not_found' : 'bgg_unavailable', 'http_status' => $response['status']]);
         exit;
     }
 
@@ -59,7 +94,9 @@ try {
     // Extract thumbnail URL
     $items = $xml->xpath('//item');
     if (empty($items)) {
-        throw new Exception('No item found');
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'game_not_found', 'http_status' => $response['status']]);
+        exit;
     }
 
     $item = $items[0];
@@ -79,6 +116,8 @@ try {
     if ($urlThumb === '') {
         throw new Exception('Empty image URL');
     }
+
+    $urlThumb = normalize_bgg_image_url($urlThumb);
 
     // Cache the result
     @mkdir(get_bgg_cache_dir(), 0750, true);

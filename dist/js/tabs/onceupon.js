@@ -1,3 +1,24 @@
+const onceUponDynamicThumbCache = new Map();
+const onceUponDynamicThumbPending = new Map();
+
+function normalizeOnceUponBggId(value) {
+    const normalized = String(value || '').trim().replace(/^bgg_/i, '');
+    return /^\d+$/.test(normalized) ? normalized : '';
+}
+
+function normalizeOnceUponImageUrl(url) {
+    const normalized = String(url || '').trim();
+    if (!normalized) {
+        return '';
+    }
+
+    if (normalized.startsWith('http://')) {
+        return 'https://' + normalized.slice(7);
+    }
+
+    return normalized;
+}
+
 window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDate = null, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
     const cards = onceUponData && Array.isArray(onceUponData.cards) ? onceUponData.cards : [];
     const dateSlugPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -108,6 +129,100 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
         return '<a href="#onceupon/' + encodeURIComponent(normalizedDate) + '" class="text-cyan-300 hover:text-cyan-200 underline">' + safeDate + '</a>';
     }
 
+    function extractPlayBggId(play) {
+        const fromGame = normalizeOnceUponBggId(play && play.game && play.game.bggId);
+        if (fromGame) {
+            return fromGame;
+        }
+
+        return normalizeOnceUponBggId(play && play.gameId);
+    }
+
+    function getPlayThumbnailData(play) {
+        const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+        const game = play && play.game;
+        if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
+            return {
+                url: game.urlThumb,
+                placeholder: placeholderSvg,
+                dynamicBggId: null
+            };
+        }
+
+        const bggId = extractPlayBggId(play);
+        return {
+            url: placeholderSvg,
+            placeholder: placeholderSvg,
+            dynamicBggId: !game && bggId ? bggId : null
+        };
+    }
+
+    async function fetchDynamicBggThumbUrl(bggId) {
+        if (!bggId) {
+            return null;
+        }
+
+        if (onceUponDynamicThumbCache.has(bggId)) {
+            return onceUponDynamicThumbCache.get(bggId);
+        }
+
+        if (onceUponDynamicThumbPending.has(bggId)) {
+            return onceUponDynamicThumbPending.get(bggId);
+        }
+
+        const request = fetch('api/get_game_image.php?id=' + encodeURIComponent(bggId), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(payload => {
+                const thumbUrl = payload && payload.success && typeof payload.urlThumb === 'string'
+                    ? payload.urlThumb.trim()
+                    : '';
+                const normalizedThumb = normalizeOnceUponImageUrl(thumbUrl);
+                const resolved = normalizedThumb && isValidImageUrl(normalizedThumb) ? normalizedThumb : null;
+                onceUponDynamicThumbCache.set(bggId, resolved);
+                return resolved;
+            })
+            .catch(() => {
+                onceUponDynamicThumbCache.set(bggId, null);
+                return null;
+            })
+            .finally(() => {
+                onceUponDynamicThumbPending.delete(bggId);
+            });
+
+        onceUponDynamicThumbPending.set(bggId, request);
+        return request;
+    }
+
+    function hydrateDynamicBggThumbnails(container) {
+        if (!(container instanceof HTMLElement)) {
+            return;
+        }
+
+        const images = container.querySelectorAll('img[data-bgg-thumb-id]');
+        images.forEach(image => {
+            if (!(image instanceof HTMLImageElement)) {
+                return;
+            }
+
+            const bggId = normalizeOnceUponBggId(image.dataset.bggThumbId);
+            if (!bggId) {
+                return;
+            }
+
+            fetchDynamicBggThumbUrl(bggId).then(url => {
+                if (!url || !image.isConnected) {
+                    return;
+                }
+
+                image.src = url;
+            });
+        });
+    }
+
     function renderPlayCards(plays) {
         if (plays.length === 0) {
             return '<div class="p-4 text-gray-500 italic">🗂️ No plays recorded on this date.</div>';
@@ -117,7 +232,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
 
         plays.forEach(play => {
             const game = play.game;
-            const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+            const thumbnailData = getPlayThumbnailData(play);
             const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
 
             const uniquePlayerNames = [...new Set(scores
@@ -137,12 +252,11 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
                 ? renderLinkedPlayerList(winnerNames, 'text-amber-300 hover:text-amber-200 underline')
                 : '<span>Unknown</span>';
 
-            let thumbnailUrl = placeholderSvg;
-            if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
-                thumbnailUrl = game.urlThumb;
-            }
-            const safeThumbnailUrl = escapeHTML(thumbnailUrl);
-            const safePlaceholderUrl = escapeHTML(placeholderSvg);
+            const safeThumbnailUrl = escapeHTML(thumbnailData.url || '');
+            const safePlaceholderUrl = escapeHTML(thumbnailData.placeholder || '');
+            const dynamicThumbAttr = thumbnailData.dynamicBggId
+                ? ` data-bgg-thumb-id="${escapeHTML(thumbnailData.dynamicBggId)}"`
+                : '';
 
             const gameLink = getGameLinkParts(play);
             const ratingsMarkup = game
@@ -152,7 +266,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
             cardsHTML += `
                 <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
                     <div class="w-full h-32 bg-gray-700 flex items-center justify-center">
-                        <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
+                        <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}"${dynamicThumbAttr}>
                     </div>
                     <div class="p-4">
                         <h3 class="font-semibold text-lg mb-3 truncate text-gray-100"><a href="${gameLink.href}"${gameLink.attrs} class="text-blue-400 hover:text-blue-300 underline">${escapeHTML(play.Game)}</a>${gameLink.isExternal ? '<span class="ml-2 text-[11px] font-semibold text-cyan-300">BGG ↗</span>' : ''}</h3>
@@ -221,7 +335,13 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
         </div>
     `;
 
-    document.getElementById(targetId).innerHTML = html;
+    const target = document.getElementById(targetId);
+    if (!target) {
+        return;
+    }
+
+    target.innerHTML = html;
+    hydrateDynamicBggThumbnails(target);
 
     const customDateInput = document.getElementById('onceupon-custom-date-input');
     const customDateResults = document.getElementById('onceupon-custom-date-results');
@@ -250,6 +370,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
 
         function updateNavButtons(selectedDate) {
             if (!prevDayBtn || !nextDayBtn) return;
+            hydrateDynamicBggThumbnails(customDateResults);
             const idx = sortedDates.indexOf(selectedDate);
             prevDayBtn.disabled = idx <= 0;
             nextDayBtn.disabled = idx < 0 || idx >= sortedDates.length - 1;

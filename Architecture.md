@@ -122,6 +122,19 @@ For quick updates between full syncs, admin can use Delta Sync actions:
   - today minus 5 years
 - Matching plays are displayed with the same card detail format as Last Plays (date, duration, players, winner).
 
+### Dynamic Thumbnail Flow (Not-Owned Games)
+
+- Renderers: `renderPlaysTab(...)` in `dist/js/tabs/plays.js`, `renderOnceUponTab(...)` in `dist/js/tabs/onceupon.js`
+- Scope: Last Plays cards, previous-month collage entries, and OnceUpon play cards where the game is not present in local collection metadata
+- Behavior:
+  - Initially renders placeholders for missing local thumbnails
+  - Extracts BGG ID from `play.game.bggId` or `play.gameId` (`bgg_<id>`)
+  - Calls `dist/api/get_game_image.php?id=<bggId>` after render
+  - Replaces matching image elements in-place when the API returns `urlThumb`
+- Caching:
+  - Backend endpoint caches BGG responses on disk
+  - Frontend keeps in-memory Maps for resolved and in-flight requests to avoid duplicate calls in one session
+
 ### Tab Deep Links
 
 - Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`, `#gamestats`, `#playerstats`, `#admin`).

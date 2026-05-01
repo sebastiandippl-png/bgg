@@ -1,3 +1,24 @@
+const bggDynamicThumbCache = new Map();
+const bggDynamicThumbPending = new Map();
+
+function normalizeBggId(value) {
+    const normalized = String(value || '').trim().replace(/^bgg_/i, '');
+    return /^\d+$/.test(normalized) ? normalized : '';
+}
+
+function normalizeImageUrlForDisplay(url) {
+    const normalized = String(url || '').trim();
+    if (!normalized) {
+        return '';
+    }
+
+    if (normalized.startsWith('http://')) {
+        return 'https://' + normalized.slice(7);
+    }
+
+    return normalized;
+}
+
 function renderPlays4WeekChart(chartData) {
     if (!Array.isArray(chartData) || chartData.length === 0) return '';
     const maxCount = Math.max(1, ...chartData.map(d => d.count));
@@ -118,13 +139,98 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         return '<a href="' + href + '" class="text-cyan-300 hover:text-cyan-200 underline">' + safeDate + '</a>';
     }
 
-    function getPlayThumbnailUrl(play) {
+    function extractPlayBggId(play) {
+        const fromGame = normalizeBggId(play && play.game && play.game.bggId);
+        if (fromGame) {
+            return fromGame;
+        }
+
+        return normalizeBggId(play && play.gameId);
+    }
+
+    function getPlayThumbnailData(play) {
         const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
         const game = play && play.game;
         if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
-            return game.urlThumb;
+            return {
+                url: game.urlThumb,
+                placeholder: placeholderSvg,
+                dynamicBggId: null
+            };
         }
-        return placeholderSvg;
+
+        const bggId = extractPlayBggId(play);
+        return {
+            url: placeholderSvg,
+            placeholder: placeholderSvg,
+            dynamicBggId: play && play.isNotOwned && bggId ? bggId : null
+        };
+    }
+
+    async function fetchDynamicBggThumbUrl(bggId) {
+        if (!bggId) {
+            return null;
+        }
+
+        if (bggDynamicThumbCache.has(bggId)) {
+            return bggDynamicThumbCache.get(bggId);
+        }
+
+        if (bggDynamicThumbPending.has(bggId)) {
+            return bggDynamicThumbPending.get(bggId);
+        }
+
+        const request = fetch('api/get_game_image.php?id=' + encodeURIComponent(bggId), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(payload => {
+                const thumbUrl = payload && payload.success && typeof payload.urlThumb === 'string'
+                    ? payload.urlThumb.trim()
+                    : '';
+                const normalizedThumb = normalizeImageUrlForDisplay(thumbUrl);
+                const resolved = normalizedThumb && isValidImageUrl(normalizedThumb) ? normalizedThumb : null;
+                bggDynamicThumbCache.set(bggId, resolved);
+                return resolved;
+            })
+            .catch(() => {
+                bggDynamicThumbCache.set(bggId, null);
+                return null;
+            })
+            .finally(() => {
+                bggDynamicThumbPending.delete(bggId);
+            });
+
+        bggDynamicThumbPending.set(bggId, request);
+        return request;
+    }
+
+    function hydrateDynamicBggThumbnails(container) {
+        if (!(container instanceof HTMLElement)) {
+            return;
+        }
+
+        const images = container.querySelectorAll('img[data-bgg-thumb-id]');
+        images.forEach(image => {
+            if (!(image instanceof HTMLImageElement)) {
+                return;
+            }
+
+            const bggId = normalizeBggId(image.dataset.bggThumbId);
+            if (!bggId) {
+                return;
+            }
+
+            fetchDynamicBggThumbUrl(bggId).then(url => {
+                if (!url || !image.isConnected) {
+                    return;
+                }
+
+                image.src = url;
+            });
+        });
     }
 
     function renderLastMonthCollageCard() {
@@ -159,6 +265,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
                 ? `id:${String(play.gameId).trim()}`
                 : `name:${fallbackName.toLowerCase()}`;
             const duration = Number(play && play.Duration);
+            const thumbnailData = getPlayThumbnailData(play);
 
             if (!gamesByKey.has(gameKey)) {
                 gamesByKey.set(gameKey, {
@@ -166,7 +273,8 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
                     gameName: fallbackName,
                     playCount: 0,
                     totalDuration: 0,
-                    thumbnailUrl: getPlayThumbnailUrl(play)
+                    thumbnailUrl: thumbnailData.url,
+                    dynamicBggId: thumbnailData.dynamicBggId
                 });
             }
 
@@ -176,9 +284,24 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         });
 
         const gameList = [...gamesByKey.values()]
-            .sort((a, b) => b.playCount - a.playCount || b.totalDuration - a.totalDuration || a.gameName.localeCompare(b.gameName));
+            .sort((a, b) => b.totalDuration - a.totalDuration || b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
 
-        const mostPlayedKey = gameList[0] ? gameList[0].key : null;
+        const mostPlayedKey = gameList.reduce((bestKey, item) => {
+            if (!bestKey) {
+                return item.key;
+            }
+            const currentBest = gamesByKey.get(bestKey);
+            if (!currentBest) {
+                return item.key;
+            }
+            if (item.playCount > currentBest.playCount) {
+                return item.key;
+            }
+            if (item.playCount === currentBest.playCount && item.totalDuration > currentBest.totalDuration) {
+                return item.key;
+            }
+            return bestKey;
+        }, null);
         const mostTimeKey = gameList.reduce((bestKey, item) => {
             if (!bestKey) {
                 return item.key;
@@ -196,9 +319,10 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
             return bestKey;
         }, null);
 
-        const collageItemsMarkup = gameList.slice(0, 18).map(item => {
+        const collageItemsMarkup = gameList.map(item => {
             const safeThumb = escapeHTML(item.thumbnailUrl || '');
             const safeName = escapeHTML(item.gameName || 'Unknown Game');
+            const dynamicThumbAttr = item.dynamicBggId ? ` data-bgg-thumb-id="${escapeHTML(item.dynamicBggId)}"` : '';
             const trophyBadge = item.key === mostPlayedKey
                 ? '<span class="absolute top-1 left-1 rounded-full bg-amber-400/95 text-gray-900 text-[11px] leading-none px-1 py-0.5" title="Most played game">🏆</span>'
                 : '';
@@ -208,7 +332,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
 
             return `
                 <div class="relative overflow-hidden rounded-md border border-gray-600/70 bg-gray-700/70">
-                    <img src="${safeThumb}" alt="${safeName}" class="w-full h-full object-cover aspect-square" loading="lazy">
+                    <img src="${safeThumb}" alt="${safeName}" class="w-full h-full object-cover aspect-square" loading="lazy"${dynamicThumbAttr}>
                     ${trophyBadge}
                     ${watchBadge}
                 </div>
@@ -239,7 +363,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
 
     recentPlays.forEach(play => {
         const game = play.game;
-        const placeholderSvg = typeof getPlaceholderImageUrl === 'function' ? getPlaceholderImageUrl() : '';
+        const thumbnailData = getPlayThumbnailData(play);
         const scores = Array.isArray(play.playerScores) ? play.playerScores : [];
 
         const uniquePlayerNames = [...new Set(scores
@@ -259,12 +383,11 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
             ? renderLinkedPlayerList(winnerNames, 'text-amber-300 hover:text-amber-200 underline')
             : '<span>Unknown</span>';
 
-        let thumbnailUrl = placeholderSvg;
-        if (game && game.urlThumb && isValidImageUrl(game.urlThumb)) {
-            thumbnailUrl = game.urlThumb;
-        }
-        const safeThumbnailUrl = escapeHTML(thumbnailUrl);
-        const safePlaceholderUrl = escapeHTML(placeholderSvg);
+        const safeThumbnailUrl = escapeHTML(thumbnailData.url || '');
+        const safePlaceholderUrl = escapeHTML(thumbnailData.placeholder || '');
+        const dynamicThumbAttr = thumbnailData.dynamicBggId
+            ? ` data-bgg-thumb-id="${escapeHTML(thumbnailData.dynamicBggId)}"`
+            : '';
 
         const gameLink = getGameLinkParts(play);
         const ratingsMarkup = game
@@ -274,7 +397,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         cardsHTML += `
             <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
                 <div class="w-full h-32 bg-gray-700 flex items-center justify-center relative">
-                    <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}">
+                    <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}"${dynamicThumbAttr}>
                     ${play.isNotOwned ? '<div class="absolute top-2 left-2 bg-red-600/90 text-white text-xs px-2 py-1 rounded font-semibold">Not Owned</div>' : ''}
                 </div>
                 <div class="p-4">
@@ -292,5 +415,11 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
     });
 
     cardsHTML += '</div>';
-    document.getElementById(targetId).innerHTML = renderPlays4WeekChart(chartData) + cardsHTML;
+    const target = document.getElementById(targetId);
+    if (!target) {
+        return;
+    }
+
+    target.innerHTML = renderPlays4WeekChart(chartData) + cardsHTML;
+    hydrateDynamicBggThumbnails(target);
 };
