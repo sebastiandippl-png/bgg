@@ -233,14 +233,14 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         });
     }
 
-    function renderLastMonthCollageCard() {
+    function renderMonthCollageCard(monthOffset, borderColor, gradientColors) {
         const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        const monthStart = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + monthOffset + 1, 0);
         monthStart.setHours(0, 0, 0, 0);
         monthEnd.setHours(23, 59, 59, 999);
 
-        const lastMonthPlays = allPlays.filter(play => {
+        const monthPlays = allPlays.filter(play => {
             const playDate = play && play.Date ? new Date(play.Date) : null;
             if (!playDate || Number.isNaN(playDate.getTime())) {
                 return false;
@@ -248,7 +248,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
             return playDate >= monthStart && playDate <= monthEnd;
         });
 
-        if (lastMonthPlays.length === 0) {
+        if (monthPlays.length === 0) {
             return '';
         }
 
@@ -259,7 +259,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
 
         const gamesByKey = new Map();
 
-        lastMonthPlays.forEach(play => {
+        monthPlays.forEach(play => {
             const fallbackName = String((play && play.Game) || 'Unknown Game').trim() || 'Unknown Game';
             const gameKey = play && play.gameId
                 ? `id:${String(play.gameId).trim()}`
@@ -340,12 +340,12 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         }).join('');
 
         return `
-            <div class="bg-gray-800 border border-indigo-600/40 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200 h-full lg:col-span-2">
-                <div class="relative p-3 sm:p-4 bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900">
+            <div class="bg-gray-800 border ${borderColor} rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200 h-full lg:col-span-2">
+                <div class="relative p-3 sm:p-4 bg-gradient-to-br ${gradientColors}">
                     <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.4),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.35),_transparent_40%)]"></div>
                     <div class="relative flex items-center justify-between mb-3">
                         <h3 class="text-sm sm:text-base font-semibold text-gray-100 tracking-wide">${escapeHTML(monthTitle)}</h3>
-                        <span class="text-[11px] sm:text-xs text-gray-300 bg-black/35 px-2 py-1 rounded-md">${lastMonthPlays.length} plays • ${gameList.length} games</span>
+                        <span class="text-[11px] sm:text-xs text-gray-300 bg-black/35 px-2 py-1 rounded-md">${monthPlays.length} plays • ${gameList.length} games</span>
                     </div>
                     <div class="relative grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1.5">
                         ${collageItemsMarkup}
@@ -359,7 +359,8 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         `;
     }
 
-    cardsHTML += renderLastMonthCollageCard();
+    cardsHTML += renderMonthCollageCard(0, 'border-emerald-600/40', 'from-slate-900 via-green-900/40 to-slate-900');
+    cardsHTML += renderMonthCollageCard(-1, 'border-indigo-600/40', 'from-slate-900 via-gray-800 to-slate-900');
 
     recentPlays.forEach(play => {
         const game = play.game;
