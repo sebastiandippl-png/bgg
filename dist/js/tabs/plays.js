@@ -351,7 +351,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
                         ${collageItemsMarkup}
                     </div>
                     <div class="relative mt-3 text-[11px] sm:text-xs text-gray-300 flex gap-3 flex-wrap">
-                        <span><span class="text-amber-300">🏆</span> Most played: ${escapeHTML(gameList[0] ? gameList[0].gameName : 'N/A')}</span>
+                        <span><span class="text-amber-300">🏆</span> Most played: ${escapeHTML(gamesByKey.get(mostPlayedKey) ? gamesByKey.get(mostPlayedKey).gameName : 'N/A')}</span>
                         <span><span class="text-cyan-300">⌚</span> Most time: ${escapeHTML(gamesByKey.get(mostTimeKey) ? gamesByKey.get(mostTimeKey).gameName : 'N/A')}</span>
                     </div>
                 </div>
