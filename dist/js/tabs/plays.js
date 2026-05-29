@@ -58,7 +58,7 @@ function renderPlays4WeekChart(chartData) {
 window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chartData, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'plays-table' }) {
     const recentPlays = playsData;
     const allPlays = Array.isArray(allPlaysData) && allPlaysData.length > 0 ? allPlaysData : recentPlays;
-    let cardsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">';
+    let playsGridHTML = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
 
     function getPlayerKeyByName(name) {
         const normalizedName = String(name || '').trim().toLowerCase();
@@ -340,7 +340,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         }).join('');
 
         return `
-            <div class="bg-gray-800 border ${borderColor} rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200 h-full lg:col-span-2">
+            <div class="w-full bg-gray-800 border ${borderColor} rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200">
                 <div class="relative p-3 sm:p-4 bg-gradient-to-br ${gradientColors}">
                     <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.4),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.35),_transparent_40%)]"></div>
                     <div class="relative flex items-center justify-between mb-3">
@@ -359,8 +359,8 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         `;
     }
 
-    cardsHTML += renderMonthCollageCard(0, 'border-emerald-600/40', 'from-slate-900 via-green-900/40 to-slate-900');
-    cardsHTML += renderMonthCollageCard(-1, 'border-indigo-600/40', 'from-slate-900 via-gray-800 to-slate-900');
+    const currentMonthCollage = renderMonthCollageCard(0, 'border-emerald-600/40', 'from-slate-900 via-green-900/40 to-slate-900');
+    const previousMonthCollage = renderMonthCollageCard(-1, 'border-indigo-600/40', 'from-slate-900 via-gray-800 to-slate-900');
 
     recentPlays.forEach(play => {
         const game = play.game;
@@ -395,7 +395,7 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
             ? renderRatingValue(game.averageRating) + ' / ' + renderRatingValue(game.geekRating)
             : '-';
 
-        cardsHTML += `
+        playsGridHTML += `
             <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 h-full">
                 <div class="w-full h-32 bg-gray-700 flex items-center justify-center relative">
                     <img src="${safeThumbnailUrl}" alt="${escapeHTML(play.Game)}" class="max-w-full max-h-full object-contain" data-fallback-src="${safePlaceholderUrl}"${dynamicThumbAttr}>
@@ -415,7 +415,17 @@ window.renderPlaysTab = function renderPlaysTab({ playsData, allPlaysData, chart
         `;
     });
 
+    playsGridHTML += '</div>';
+    let cardsHTML = '<div class="p-4 space-y-4">';
+    if (currentMonthCollage) {
+        cardsHTML += currentMonthCollage;
+    }
+    cardsHTML += playsGridHTML;
+    if (previousMonthCollage) {
+        cardsHTML += previousMonthCollage;
+    }
     cardsHTML += '</div>';
+
     const target = document.getElementById(targetId);
     if (!target) {
         return;

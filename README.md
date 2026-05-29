@@ -69,7 +69,11 @@ In `Played Today One Week Ago`, `Played Today One Year Ago`, and `Played Today 5
 
 When using `Choose a Date`, the selected date view follows the same order: selected-day play cards first, then the selected month collage.
 
-The `Last Plays` tab now includes a monthly thumbnail collage card for the previous calendar month (days 1–31/30/29 as applicable), including:
+The `Last Plays` tab now includes two monthly thumbnail collage cards in this order:
+- current month collage (full width) above the play cards
+- previous month collage (full width) below the play cards
+
+Both collage cards include:
 - month/year label directly on top of the collage
 - badge markers for most played game (`🏆`) and most time spent game (`⌚`)
 - inline summary of total plays and unique games in that month
