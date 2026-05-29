@@ -1,4 +1,7 @@
 window.BGStatsSelectors = (function createSelectorModule() {
+    const TIMELINE_START_YEAR = 2017;
+    const TIMELINE_START_MONTH = 1;
+
     function getLastRecordedPlayDate(state) {
         const timestamps = state.plays
             .map(play => play.Date)
@@ -150,9 +153,9 @@ window.BGStatsSelectors = (function createSelectorModule() {
         const monthKeys = Object.keys(monthlyPlayCounts).sort();
         const playsOverTime = [];
         if (monthKeys.length > 0) {
-            const [fy, fm] = monthKeys[0].split('-').map(Number);
             const [ly, lm] = monthKeys[monthKeys.length - 1].split('-').map(Number);
-            let cy = fy, cm = fm;
+            let cy = TIMELINE_START_YEAR;
+            let cm = TIMELINE_START_MONTH;
             while (cy < ly || (cy === ly && cm <= lm)) {
                 const key = String(cy) + '-' + String(cm).padStart(2, '0');
                 playsOverTime.push({ key, count: monthlyPlayCounts[key] || 0 });

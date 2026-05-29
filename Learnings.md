@@ -1,5 +1,19 @@
 # BGG API Learnings & Known Issues
 
+## Frontend Chart Learnings
+
+### Keep Timeline X-Axis Baselines Consistent
+
+**Rule**: Month-based play diagrams should use a shared baseline start (`2017-01`) instead of each chart starting at its own first non-zero month.
+
+**Why**:
+- Makes charts directly comparable across tabs
+- Prevents misleading visual compression/expansion from dynamic axis starts
+
+**Code Locations**:
+- `dist/js/app/selectors.js` (`playsOverTime` generation for Insights)
+- `dist/js/tabs/gamestats.js` (`renderPlaysTimelineChart` for Game Stats)
+
 ## BGG XMLAPI2 API Learnings
 
 ### Critical API Quirks & Workarounds

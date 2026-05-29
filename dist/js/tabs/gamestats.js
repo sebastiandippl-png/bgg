@@ -82,6 +82,9 @@ window.BGStatsGameStats = (function createGameStatsModule() {
 })();
 
 window.renderGameStatsTab = function renderGameStatsTab(options) {
+    var TIMELINE_START_YEAR = 2017;
+    var TIMELINE_START_MONTH = 1;
+
     var allGames = options.allGames;
     var allPlayers = options.allPlayers;
     var gameStatsData = options.gameStatsData;
@@ -225,16 +228,13 @@ window.renderGameStatsTab = function renderGameStatsTab(options) {
                 + '</div>';
         }
 
-        var firstParts = availableMonths[0].split('-');
         var lastParts = availableMonths[availableMonths.length - 1].split('-');
-        var firstYear = Number(firstParts[0]);
-        var firstMonth = Number(firstParts[1]);
         var lastYear = Number(lastParts[0]);
         var lastMonth = Number(lastParts[1]);
 
         var monthSeries = [];
-        var cursorYear = firstYear;
-        var cursorMonth = firstMonth;
+        var cursorYear = TIMELINE_START_YEAR;
+        var cursorMonth = TIMELINE_START_MONTH;
         while (cursorYear < lastYear || (cursorYear === lastYear && cursorMonth <= lastMonth)) {
             var monthKey = String(cursorYear) + '-' + String(cursorMonth).padStart(2, '0');
             monthSeries.push({

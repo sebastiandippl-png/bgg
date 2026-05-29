@@ -25,6 +25,28 @@ For incremental updates after a full sync, use the Delta Sync card:
 - `Game Metadata Delta Sync`: fills missing metadata for games in the existing DB
 - `Get Last Plays`: appends only recent plays not already stored
 
+## Run Dev Server
+
+Use PHP's built-in server so both static files and API endpoints under `dist/api` work locally.
+
+From project root:
+
+```bash
+php -S 127.0.0.1:8080 -t dist
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8080/bgstats-dashboard.html
+```
+
+Alternative (if you are already in `dist/`):
+
+```bash
+php -S 127.0.0.1:8080
+```
+
 ## Data Source
 
 The application no longer supports BGStats JSON upload/import.
@@ -79,6 +101,8 @@ The `Most Played` tab shows small rank-movement symbols in each weight category 
 - `↓` = lower rank than the comparison period
 - `→` = same rank as the comparison period
 - `✦` = not in the comparison period list
+
+Timeline charts are normalized to the same x-axis start (`2017-01`), so month-based diagrams are directly comparable across tabs.
 
 Comparison periods:
 - Year cards compare against the previous year (within the same weight category)

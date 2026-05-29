@@ -135,6 +135,11 @@ For quick updates between full syncs, admin can use Delta Sync actions:
   - Backend endpoint caches BGG responses on disk
   - Frontend keeps in-memory Maps for resolved and in-flight requests to avoid duplicate calls in one session
 
+### Timeline Axis Normalization
+
+- Month-based play timeline charts use a shared baseline start at `2017-01` (the first recorded play year).
+- This applies to the Insights all-plays chart and the Game Stats per-game timeline so x-axis ranges stay comparable.
+
 ### Tab Deep Links
 
 - Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`, `#gamestats`, `#playerstats`, `#admin`).
