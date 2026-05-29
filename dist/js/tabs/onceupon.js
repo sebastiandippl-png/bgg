@@ -21,6 +21,7 @@ function normalizeOnceUponImageUrl(url) {
 
 window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDate = null, allPlayers, escapeHTML, isValidImageUrl, getPlaceholderImageUrl, targetId = 'onceupon-content' }) {
     const cards = onceUponData && Array.isArray(onceUponData.cards) ? onceUponData.cards : [];
+    const allPlays = onceUponData && Array.isArray(onceUponData.allPlays) ? onceUponData.allPlays : [];
     const dateSlugPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 
     function normalizeDateKey(value) {
@@ -286,6 +287,144 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
         return cardsHTML;
     }
 
+    function renderMonthCollageCardForDate(referenceDateKey, borderColor, gradientColors) {
+        const match = String(referenceDateKey || '').match(dateSlugPattern);
+        if (!match) {
+            return '';
+        }
+
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+            return '';
+        }
+
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = new Date(year, month, 0);
+        monthStart.setHours(0, 0, 0, 0);
+        monthEnd.setHours(23, 59, 59, 999);
+
+        const monthPlays = allPlays.filter(play => {
+            const playDate = play && play.Date ? new Date(play.Date) : null;
+            if (!playDate || Number.isNaN(playDate.getTime())) {
+                return false;
+            }
+            return playDate >= monthStart && playDate <= monthEnd;
+        });
+
+        if (monthPlays.length === 0) {
+            return '';
+        }
+
+        const monthTitle = new Intl.DateTimeFormat(undefined, {
+            month: 'long',
+            year: 'numeric'
+        }).format(monthStart);
+
+        const gamesByKey = new Map();
+        monthPlays.forEach(play => {
+            const fallbackName = String((play && play.Game) || 'Unknown Game').trim() || 'Unknown Game';
+            const gameKey = play && play.gameId
+                ? `id:${String(play.gameId).trim()}`
+                : `name:${fallbackName.toLowerCase()}`;
+            const duration = Number(play && play.Duration);
+            const thumbnailData = getPlayThumbnailData(play);
+
+            if (!gamesByKey.has(gameKey)) {
+                gamesByKey.set(gameKey, {
+                    key: gameKey,
+                    gameName: fallbackName,
+                    playCount: 0,
+                    totalDuration: 0,
+                    thumbnailUrl: thumbnailData.url,
+                    dynamicBggId: thumbnailData.dynamicBggId
+                });
+            }
+
+            const item = gamesByKey.get(gameKey);
+            item.playCount += 1;
+            item.totalDuration += Number.isFinite(duration) ? duration : 0;
+        });
+
+        const gameList = [...gamesByKey.values()]
+            .sort((a, b) => b.totalDuration - a.totalDuration || b.playCount - a.playCount || a.gameName.localeCompare(b.gameName));
+
+        const mostPlayedKey = gameList.reduce((bestKey, item) => {
+            if (!bestKey) {
+                return item.key;
+            }
+            const currentBest = gamesByKey.get(bestKey);
+            if (!currentBest) {
+                return item.key;
+            }
+            if (item.playCount > currentBest.playCount) {
+                return item.key;
+            }
+            if (item.playCount === currentBest.playCount && item.totalDuration > currentBest.totalDuration) {
+                return item.key;
+            }
+            return bestKey;
+        }, null);
+
+        const mostTimeKey = gameList.reduce((bestKey, item) => {
+            if (!bestKey) {
+                return item.key;
+            }
+            const currentBest = gamesByKey.get(bestKey);
+            if (!currentBest) {
+                return item.key;
+            }
+            if (item.totalDuration > currentBest.totalDuration) {
+                return item.key;
+            }
+            if (item.totalDuration === currentBest.totalDuration && item.playCount > currentBest.playCount) {
+                return item.key;
+            }
+            return bestKey;
+        }, null);
+
+        const collageItemsMarkup = gameList.map(item => {
+            const safeThumb = escapeHTML(item.thumbnailUrl || '');
+            const safeName = escapeHTML(item.gameName || 'Unknown Game');
+            const dynamicThumbAttr = item.dynamicBggId ? ` data-bgg-thumb-id="${escapeHTML(item.dynamicBggId)}"` : '';
+            const trophyBadge = item.key === mostPlayedKey
+                ? '<span class="absolute top-1 left-1 rounded-full bg-amber-400/95 text-gray-900 text-[11px] leading-none px-1 py-0.5" title="Most played game">🏆</span>'
+                : '';
+            const watchBadge = item.key === mostTimeKey
+                ? '<span class="absolute top-1 right-1 rounded-full bg-cyan-300/95 text-gray-900 text-[11px] leading-none px-1 py-0.5" title="Most time spent">⌚</span>'
+                : '';
+
+            return `
+                <div class="relative overflow-hidden rounded-md border border-gray-600/70 bg-gray-700/70">
+                    <img src="${safeThumb}" alt="${safeName}" class="w-full h-full object-cover aspect-square" loading="lazy"${dynamicThumbAttr}>
+                    ${trophyBadge}
+                    ${watchBadge}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="p-4 pt-3">
+                <div class="bg-gray-800 border ${borderColor} rounded-lg overflow-hidden hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-200">
+                    <div class="relative p-3 sm:p-4 bg-gradient-to-br ${gradientColors}">
+                        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.4),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.35),_transparent_40%)]"></div>
+                        <div class="relative flex items-center justify-between mb-3">
+                            <h3 class="text-sm sm:text-base font-semibold text-gray-100 tracking-wide">${escapeHTML(monthTitle)}</h3>
+                            <span class="text-[11px] sm:text-xs text-gray-300 bg-black/35 px-2 py-1 rounded-md">${monthPlays.length} plays • ${gameList.length} games</span>
+                        </div>
+                        <div class="relative grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1.5">
+                            ${collageItemsMarkup}
+                        </div>
+                        <div class="relative mt-3 text-[11px] sm:text-xs text-gray-300 flex gap-3 flex-wrap">
+                            <span><span class="text-amber-300">🏆</span> Most played: ${escapeHTML(gamesByKey.get(mostPlayedKey) ? gamesByKey.get(mostPlayedKey).gameName : 'N/A')}</span>
+                            <span><span class="text-cyan-300">⌚</span> Most time: ${escapeHTML(gamesByKey.get(mostTimeKey) ? gamesByKey.get(mostTimeKey).gameName : 'N/A')}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function renderCustomDatePicker() {
         return `
             <div class="px-4 py-4">
@@ -322,6 +461,27 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
                         </section>
                     `;
                 }
+
+                const collageConfigByCardId = {
+                    week_ago: {
+                        borderColor: 'border-cyan-600/40',
+                        gradientColors: 'from-slate-900 via-cyan-900/25 to-slate-900'
+                    },
+                    year_ago: {
+                        borderColor: 'border-fuchsia-600/40',
+                        gradientColors: 'from-slate-900 via-fuchsia-900/30 to-slate-900'
+                    },
+                    five_years_ago: {
+                        borderColor: 'border-amber-600/40',
+                        gradientColors: 'from-slate-900 via-amber-900/25 to-slate-900'
+                    }
+                };
+
+                const collageConfig = collageConfigByCardId[card.id] || null;
+                const collageMarkup = collageConfig
+                    ? renderMonthCollageCardForDate(card.dateLabel, collageConfig.borderColor, collageConfig.gradientColors)
+                    : '';
+
                 return `
                     <section class="rounded-lg border border-gray-700 bg-gray-900/40 overflow-hidden">
                         <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/70">
@@ -329,6 +489,7 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
                             <p class="text-xs text-gray-500 mt-1">${escapeHTML(card.dateLabel)}</p>
                         </div>
                         ${renderPlayCards(card.plays)}
+                        ${collageMarkup}
                     </section>
                 `;
             }).join('')}
@@ -365,7 +526,8 @@ window.renderOnceUponTab = function renderOnceUponTab({ onceUponData, selectedDa
                 });
             }
             selectedPlays.sort((first, second) => (Number(second.timestamp) || 0) - (Number(first.timestamp) || 0));
-            customDateResults.innerHTML = renderPlayCards(selectedPlays);
+            customDateResults.innerHTML = renderPlayCards(selectedPlays)
+                + renderMonthCollageCardForDate(dateStr, 'border-green-600/40', 'from-slate-900 via-emerald-900/30 to-slate-900');
         }
 
         function updateNavButtons(selectedDate) {

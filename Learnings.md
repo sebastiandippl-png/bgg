@@ -14,6 +14,18 @@
 - `dist/js/app/selectors.js` (`playsOverTime` generation for Insights)
 - `dist/js/tabs/gamestats.js` (`renderPlaysTimelineChart` for Game Stats)
 
+### Reuse Monthly Collage Rules Across Tabs
+
+**Rule**: In OnceUpon month snapshot views (week/year/5-years/custom date), render day-specific plays first, then the month collage.
+
+Use the same collage semantics as Last Plays:
+- aggregate by game within the month
+- rank by total duration, tie-break by play count
+- show `🏆` most played and `⌚` most time spent markers
+
+**Code Location**:
+- `dist/js/tabs/onceupon.js` (`renderMonthCollageCardForDate`)
+
 ## BGG XMLAPI2 API Learnings
 
 ### Critical API Quirks & Workarounds

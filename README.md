@@ -63,6 +63,12 @@ The `OnceUpon` tab shows three day-based cards with full play details (duration,
 - played today one year ago
 - played today 5 years ago
 
+In `Played Today One Week Ago`, `Played Today One Year Ago`, and `Played Today 5 Years Ago`, each card shows:
+- single-day plays first
+- then a monthly collage for the same target month (matching the Last Plays collage style with most-played and most-time badges)
+
+When using `Choose a Date`, the selected date view follows the same order: selected-day play cards first, then the selected month collage.
+
 The `Last Plays` tab now includes a monthly thumbnail collage card for the previous calendar month (days 1–31/30/29 as applicable), including:
 - month/year label directly on top of the collage
 - badge markers for most played game (`🏆`) and most time spent game (`⌚`)

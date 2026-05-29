@@ -121,6 +121,8 @@ For quick updates between full syncs, admin can use Delta Sync actions:
   - today minus 1 year
   - today minus 5 years
 - Matching plays are displayed with the same card detail format as Last Plays (date, duration, players, winner).
+- The `Played Today One Week Ago`, `Played Today One Year Ago`, and `Played Today 5 Years Ago` cards render content in this order: day-specific plays first, then the target-month thumbnail collage.
+- The `Choose a Date` flow uses the same order: selected-day plays first, then the selected-month collage.
 
 ### Dynamic Thumbnail Flow (Not-Owned Games)
 
