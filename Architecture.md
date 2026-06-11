@@ -144,10 +144,23 @@ For quick updates between full syncs, admin can use Delta Sync actions:
 
 ### Tab Deep Links
 
-- Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`, `#gamestats`, `#playerstats`, `#admin`).
+- Tabs are URL-addressable via hash (`#insights`, `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`, `#bggtopgames`, `#gamestats`, `#playerstats`, `#admin`).
 - On app init, dashboard reads the current hash and sets the initial active tab.
 - On tab switch, dashboard updates the hash so links can be shared/bookmarked.
 - `hashchange` handling keeps browser back/forward navigation in sync with the active tab.
+
+### BGG Top Games CSV Upload Flow
+
+- Renderer: `renderBggTopGamesTab(...)` in `dist/js/tabs/bggtopgames.js`
+- Endpoints: `dist/api/upload_bgg_dump.php`, `dist/api/get_bgg_top_games.php`
+- Behavior:
+  - Shows a dedicated upload control in the `BGG Top Games` tab
+  - Accepts CSV files only
+  - Requires admin authentication via `require_admin_json()`
+  - Writes upload atomically to `dist/db_storage/bgg_dump_latest.csv`
+  - Invalidates `dist/db_storage/bgg_top_games_cache.json` immediately after successful upload
+  - Lists top 10 games where `yearpublished` equals each card year (current year plus previous 10 years), sorted by `rank` ascending
+  - Caches parsed results in `dist/db_storage/bgg_top_games_cache.json` and reuses them until the dump changes
 
 ### WantToBuy Tab Flow
 

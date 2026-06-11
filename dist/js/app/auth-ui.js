@@ -27,6 +27,10 @@
     function setAdminVisibility(isAdmin) {
         window.__bgstatsAdmin = isAdmin;
 
+        window.dispatchEvent(new CustomEvent('bgstats:auth-changed', {
+            detail: { isAdmin: isAdmin }
+        }));
+
         ADMIN_ELEMENTS.forEach(function (id) {
             var el = document.getElementById(id);
             if (!el) return;

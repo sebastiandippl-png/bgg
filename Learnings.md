@@ -2,6 +2,24 @@
 
 ## Frontend Chart Learnings
 
+## BGG Top Games Learnings
+
+### Cache Parsed CSV Results By Dump Fingerprint
+
+**Rule**: Parsing and ranking BGG dump CSV data for multiple years should be cached on disk and keyed by dump metadata (`mtime` + `size`).
+
+**Why**:
+- Avoids reparsing large CSV files on every tab refresh
+- Keeps API latency stable when rendering 11 year cards (current year + previous 10)
+
+**Invalidation**:
+- Remove cache file immediately after a successful new dump upload
+- Endpoint should also self-validate cache fingerprint against current dump file
+
+**Code Locations**:
+- `dist/api/get_bgg_top_games.php`
+- `dist/api/upload_bgg_dump.php`
+
 ### Keep Timeline X-Axis Baselines Consistent
 
 **Rule**: Month-based play diagrams should use a shared baseline start (`2017-01`) instead of each chart starting at its own first non-zero month.

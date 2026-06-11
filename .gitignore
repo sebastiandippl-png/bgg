@@ -13,6 +13,7 @@ dist/db_storage/links.json
 
 # Local sample/runtime artifacts
 dist/db_storage/*.xml
+dist/db_storage/bgg_dump_latest.csv
 
 # Python virtual environments
 .venv/
@@ -27,3 +28,5 @@ dist/db_storage/cache_bgg/
 dist/bgg.db-shm
 dist/bgg.db-wal
 dist/db_storage/bgg_sync_log.json
+bgg_dump/boardgames_ranks_2026-06-11.zip
+bgg_dump/boardgames_ranks.csv

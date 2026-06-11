@@ -12,7 +12,7 @@ window.BGStatsDashboard = (function createDashboardModule() {
     const SYNC_BGG_PLAYS_URL = 'api/sync_bgg_plays.php';
     const SYNC_BGG_LAST_PLAYS_URL = 'api/sync_bgg_last_plays.php';
     const SYNC_BGG_STATUS_URL = 'api/sync_bgg_status.php';
-    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'mostplayed', 'nextplay', 'wanttobuy', 'gamestats', 'playerstats', 'admin']);
+    const TAB_IDS = new Set(['insights', 'plays', 'onceupon', 'mostplayed', 'nextplay', 'wanttobuy', 'bggtopgames', 'gamestats', 'playerstats', 'admin']);
 
     function getTabIdFromHash() {
         const hash = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -556,6 +556,13 @@ window.BGStatsDashboard = (function createDashboardModule() {
                 isValidImageUrl,
                 getPlaceholderImageUrl: window.getPlaceholderBoxArtUtil,
                 targetId: 'wanttobuy-content'
+            });
+            return;
+        }
+
+        if (tabId === 'bggtopgames' && typeof window.renderBggTopGamesTab === 'function') {
+            window.renderBggTopGamesTab({
+                targetId: 'bggtopgames-content'
             });
             return;
         }

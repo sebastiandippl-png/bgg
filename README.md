@@ -94,6 +94,10 @@ WantToBuy price lookup behavior:
 
 Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
+The `BGG Top Games` tab includes an admin-only CSV upload control to store a BoardGameGeek dump file at `dist/db_storage/bgg_dump_latest.csv` for later processing.
+The same tab shows cards for the current year plus the previous 10 years. Each card lists the top 10 games where `yearpublished` equals that card year, sorted by `rank` ascending (lowest rank first).
+Results are cached in `dist/db_storage/bgg_top_games_cache.json` and automatically invalidated when a new dump is uploaded.
+
 The `OnceUpon` tab also supports a date slug: `#onceupon/YYYY-MM-DD` (for example `#onceupon/2026-04-12`).
 - In date-slug mode, the tab shows only the `Choose a Date` card
 - The date picker is prefilled with the slug date
@@ -132,6 +136,8 @@ Comparison periods:
 - `dist/api/sync_bgg_last_plays.php`: incremental last-week plays sync (non-destructive)
 - `dist/api/get_db.php`: serves active `bgg.db`
 - `dist/api/get_funtainment_prices.php`: top-5 Funtainment search and product meta extraction with 24-hour cache
+- `dist/api/upload_bgg_dump.php`: admin-only CSV upload endpoint for `BGG Top Games`
+- `dist/api/get_bgg_top_games.php`: reads uploaded dump and returns top 10 by rank for current year plus previous 10 years (with file cache)
 - `dist/bgg.db`: active SQLite database used by the dashboard
 - `dist/db_storage/`: backups, sync status, and cache files
 

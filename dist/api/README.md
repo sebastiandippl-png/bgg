@@ -70,6 +70,70 @@ Error responses:
 - `409 Conflict`: Sync already running
 - `500 Internal Server Error`: BGG sync failed
 
+### POST /api/upload_bgg_dump.php
+Admin-only endpoint for uploading a BoardGameGeek CSV dump.
+
+Behavior:
+- Requires `X-Requested-With: XMLHttpRequest` header.
+- Requires an authenticated admin session.
+- Expects multipart form field `dump_csv`.
+- Validates `.csv` extension and file size (max 30 MB).
+- Stores file in `dist/db_storage/bgg_dump_latest.csv` (atomic replace).
+- Invalidates `dist/db_storage/bgg_top_games_cache.json` after successful upload.
+
+Response on success:
+```json
+{
+  "success": true,
+  "fileName": "bgg_dump_latest.csv",
+  "bytes": 123456,
+  "uploadedAt": "2026-06-11T11:22:33+00:00"
+}
+```
+
+### GET /api/get_bgg_top_games.php
+Returns top games from uploaded CSV dump for the current year plus previous 10 years.
+
+Behavior:
+- Requires `X-Requested-With: XMLHttpRequest` header.
+- Reads `dist/db_storage/bgg_dump_latest.csv`.
+- Builds year buckets for `currentYear` through `currentYear - 10` (UTC).
+- Filters rows where `yearpublished` equals each bucket year.
+- Sorts each year bucket by `rank` ascending and returns top 10 per year.
+- Caches computed payload in `dist/db_storage/bgg_top_games_cache.json` keyed by dump file mtime/size.
+
+Response on success:
+```json
+{
+  "success": true,
+  "year": 2026,
+  "count": 10,
+  "cached": false,
+  "computedAt": "2026-06-11T12:34:56+00:00",
+  "games": [
+    {
+      "id": 12345,
+      "name": "Example Game",
+      "yearpublished": 2026,
+      "rank": 17,
+      "geek_rating": 7.53214
+    }
+  ],
+  "years": [
+    {
+      "year": 2026,
+      "count": 10,
+      "games": []
+    },
+    {
+      "year": 2025,
+      "count": 10,
+      "games": []
+    }
+  ]
+}
+```
+
 ## Environment Variables
 
 - `BGSTATS_BGG_USERNAME`: BGG username whose collection and plays are synced.
