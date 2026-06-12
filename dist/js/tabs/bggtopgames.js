@@ -474,7 +474,10 @@
                             <h2 class="text-lg sm:text-xl font-semibold text-rose-300">BGG Top Games</h2>
                             <p class="mt-1 text-xs text-gray-500 uppercase tracking-[0.2em]">Live from uploaded CSV</p>
                         </div>
-                        <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">From Current Year To 1990</span>
+                        <div class="flex flex-col items-end gap-2">
+                            <a href="https://francois-durand.github.io/bgg_most_played_games/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-sky-500/35 bg-sky-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-200 hover:bg-sky-500/20 transition">Open BGG Most Played Reference</a>
+                            <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">From Current Year To 1990</span>
+                        </div>
                     </div>
                     ${uploadSection}
                     <div id="bgg-top-games-results" class="mt-2"></div>
