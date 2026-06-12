@@ -10,7 +10,7 @@
 
 **Why**:
 - Avoids reparsing large CSV files on every tab refresh
-- Keeps API latency stable when rendering 11 year cards (current year + previous 10)
+- Keeps API latency stable when rendering many year cards (current year down to 1990)
 
 **Invalidation**:
 - Remove cache file immediately after a successful new dump upload

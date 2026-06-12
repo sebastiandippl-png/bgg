@@ -10,7 +10,8 @@ header('Cache-Control: no-store');
 
 const BGG_TOP_GAMES_DUMP_FILE = __DIR__ . '/../db_storage/bgg_dump_latest.csv';
 const BGG_TOP_GAMES_CACHE_FILE = __DIR__ . '/../db_storage/bgg_top_games_cache.json';
-const BGG_TOP_GAMES_YEAR_WINDOW = 10;
+const BGG_TOP_GAMES_MIN_YEAR = 1990;
+const BGG_TOP_GAMES_CACHE_VERSION = 3;
 
 $requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
 if ($requestedWith !== 'xmlhttprequest') {
@@ -36,8 +37,8 @@ if ($dumpMtime === false || $dumpSize === false) {
 
 $currentYear = (int)gmdate('Y');
 $targetYears = [];
-for ($offset = 0; $offset <= BGG_TOP_GAMES_YEAR_WINDOW; $offset++) {
-    $targetYears[] = $currentYear - $offset;
+for ($year = $currentYear; $year >= BGG_TOP_GAMES_MIN_YEAR; $year--) {
+    $targetYears[] = $year;
 }
 
 $cachedPayload = null;
@@ -47,7 +48,8 @@ if (is_file(BGG_TOP_GAMES_CACHE_FILE) && is_readable(BGG_TOP_GAMES_CACHE_FILE)) 
         $cacheData = json_decode($cacheRaw, true);
         if (
             is_array($cacheData)
-            && isset($cacheData['dumpMtime'], $cacheData['dumpSize'], $cacheData['payload'])
+            && isset($cacheData['cacheVersion'], $cacheData['dumpMtime'], $cacheData['dumpSize'], $cacheData['payload'])
+            && (int)$cacheData['cacheVersion'] === BGG_TOP_GAMES_CACHE_VERSION
             && (int)$cacheData['dumpMtime'] === (int)$dumpMtime
             && (int)$cacheData['dumpSize'] === (int)$dumpSize
             && is_array($cacheData['payload'])
@@ -148,9 +150,27 @@ foreach ($targetYears as $year) {
     });
 
     $topGames = array_slice($bucket, 0, 10);
+    $top100Count = 0;
+    $top10Count = 0;
+    foreach ($bucket as $game) {
+        if (!isset($game['rank'])) {
+            continue;
+        }
+
+        $rankValue = (int)$game['rank'];
+        if ($rankValue <= 10) {
+            $top10Count++;
+        }
+        if ($rankValue <= 100) {
+            $top100Count++;
+        }
+    }
+
     $years[] = [
         'year' => $year,
         'count' => count($topGames),
+        'top10Count' => $top10Count,
+        'top100Count' => $top100Count,
         'games' => $topGames,
     ];
 }
@@ -164,6 +184,7 @@ $responsePayload = [
     'count' => count($currentYearGames),
     'games' => $currentYearGames,
     'years' => $years,
+    'minYear' => BGG_TOP_GAMES_MIN_YEAR,
     'cached' => false,
     'computedAt' => $computedAt,
 ];
@@ -171,6 +192,7 @@ $responsePayload = [
 @file_put_contents(
     BGG_TOP_GAMES_CACHE_FILE,
     json_encode([
+        'cacheVersion' => BGG_TOP_GAMES_CACHE_VERSION,
         'dumpMtime' => (int)$dumpMtime,
         'dumpSize' => (int)$dumpSize,
         'payload' => $responsePayload,

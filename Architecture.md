@@ -159,7 +159,8 @@ For quick updates between full syncs, admin can use Delta Sync actions:
   - Requires admin authentication via `require_admin_json()`
   - Writes upload atomically to `dist/db_storage/bgg_dump_latest.csv`
   - Invalidates `dist/db_storage/bgg_top_games_cache.json` immediately after successful upload
-  - Lists top 10 games where `yearpublished` equals each card year (current year plus previous 10 years), sorted by `rank` ascending
+  - Lists top 10 games where `yearpublished` equals each card year (current year down to 1990), sorted by `rank` ascending
+  - Shows per-year badges with how many games from that year are in the overall top 10 and top 100 ranks
   - Caches parsed results in `dist/db_storage/bgg_top_games_cache.json` and reuses them until the dump changes
 
 ### WantToBuy Tab Flow

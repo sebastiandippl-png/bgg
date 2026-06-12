@@ -92,14 +92,16 @@ Response on success:
 ```
 
 ### GET /api/get_bgg_top_games.php
-Returns top games from uploaded CSV dump for the current year plus previous 10 years.
+Returns top games from uploaded CSV dump for each year from current year down to 1990.
 
 Behavior:
 - Requires `X-Requested-With: XMLHttpRequest` header.
 - Reads `dist/db_storage/bgg_dump_latest.csv`.
-- Builds year buckets for `currentYear` through `currentYear - 10` (UTC).
+- Builds year buckets for `currentYear` through `1990` (UTC).
 - Filters rows where `yearpublished` equals each bucket year.
 - Sorts each year bucket by `rank` ascending and returns top 10 per year.
+- Adds `top10Count` per year for games in that year whose overall rank is `<= 10`.
+- Adds `top100Count` per year for games in that year whose overall rank is `<= 100`.
 - Caches computed payload in `dist/db_storage/bgg_top_games_cache.json` keyed by dump file mtime/size.
 
 Response on success:
@@ -107,6 +109,7 @@ Response on success:
 {
   "success": true,
   "year": 2026,
+  "minYear": 1990,
   "count": 10,
   "cached": false,
   "computedAt": "2026-06-11T12:34:56+00:00",
@@ -123,11 +126,15 @@ Response on success:
     {
       "year": 2026,
       "count": 10,
+      "top10Count": 1,
+      "top100Count": 3,
       "games": []
     },
     {
       "year": 2025,
       "count": 10,
+      "top10Count": 0,
+      "top100Count": 2,
       "games": []
     }
   ]

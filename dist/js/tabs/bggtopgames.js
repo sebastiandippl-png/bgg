@@ -118,6 +118,8 @@
                 : [{
                     year: Number(payload.year) || new Date().getFullYear(),
                     games: Array.isArray(payload.games) ? payload.games : [],
+                    top10Count: 0,
+                    top100Count: 0,
                     count: Number(payload.count) || 0,
                 }];
 
@@ -133,9 +135,20 @@
             const cards = yearGroups.map(group => {
                 const year = Number(group.year) || 0;
                 const games = Array.isArray(group.games) ? group.games : [];
+                const top10Count = Number.isFinite(Number(group.top10Count))
+                    ? Math.max(0, Number(group.top10Count))
+                    : games.reduce((sum, game) => {
+                        const rank = Number(game && game.rank);
+                        return Number.isFinite(rank) && rank <= 10 ? (sum + 1) : sum;
+                    }, 0);
+                const top100Count = Math.max(0, Number(group.top100Count) || 0);
                 if (games.length === 0) {
                     return '<div class="rounded-xl border border-gray-700/60 bg-gradient-to-br from-gray-900/80 to-gray-950/80 px-4 py-4">'
+                        + '<div class="flex flex-wrap items-center gap-2">'
                         + `<div class="text-xs uppercase tracking-[0.18em] text-rose-300">Top 10 of ${year}</div>`
+                    + `<span class="rounded-full bg-fuchsia-500/15 text-fuchsia-200 px-2.5 py-1 border border-fuchsia-500/30 text-[11px]">Top 10 Overall: ${top10Count}</span>`
+                        + `<span class="rounded-full bg-indigo-500/15 text-indigo-200 px-2.5 py-1 border border-indigo-500/30 text-[11px]">Top 100 Overall: ${top100Count}</span>`
+                        + '</div>'
                         + `<p class="mt-2 text-sm text-gray-400">No ranked games found for ${year}.</p>`
                         + '</div>';
                 }
@@ -182,6 +195,8 @@
                     + `<div class="text-xs uppercase tracking-[0.18em] text-rose-300">Top 10 of ${year}</div>`
                     + '<div class="flex flex-wrap gap-2 text-xs">'
                     + `<span class="rounded-full bg-sky-500/15 text-sky-200 px-2.5 py-1 border border-sky-500/30">Best Rank: #${topRank || 'n/a'}</span>`
+                    + `<span class="rounded-full bg-fuchsia-500/15 text-fuchsia-200 px-2.5 py-1 border border-fuchsia-500/30">Top 10 Overall: ${top10Count}</span>`
+                    + `<span class="rounded-full bg-indigo-500/15 text-indigo-200 px-2.5 py-1 border border-indigo-500/30">Top 100 Overall: ${top100Count}</span>`
                     + `<span class="rounded-full bg-emerald-500/15 text-emerald-200 px-2.5 py-1 border border-emerald-500/30">Avg Geek Rating: ${Number.isFinite(avgGeekRating) ? avgGeekRating.toFixed(5) : 'n/a'}</span>`
                     + '</div>'
                     + '</div>'
@@ -213,7 +228,7 @@
             }
 
             shell.innerHTML = '<div class="flex items-center justify-between mb-3">'
-                + '<p class="text-xs text-gray-400 uppercase tracking-[0.18em]">Current Year + Previous 10 Years</p>'
+                + `<p class="text-xs text-gray-400 uppercase tracking-[0.18em]">Current Year Down To ${Number(payload.minYear) || 1990}</p>`
                 + '<div class="flex items-center gap-3">'
                 + computedAtLabel
                 + cacheBadge
@@ -300,7 +315,7 @@
                             <p class="mt-1 text-xs text-gray-500 uppercase tracking-[0.2em]">Live from uploaded CSV</p>
                             <p id="bgg-top-games-admin-hint" class="mt-2 text-xs sm:text-sm text-gray-400"></p>
                         </div>
-                        <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">11-Year Window</span>
+                        <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">From Current Year To 1990</span>
                     </div>
                     <form id="bgg-top-games-upload-form" class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/35 p-3 sm:p-4">
                         <label for="bgg-top-games-upload-input" class="text-xs sm:text-sm text-gray-300">BoardGameGeek CSV dump</label>
