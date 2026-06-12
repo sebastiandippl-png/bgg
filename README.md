@@ -95,7 +95,10 @@ WantToBuy price lookup behavior:
 Tabs are deep-linkable via URL hash (for example `#plays`, `#onceupon`, `#nextplay`, `#wanttobuy`). Opening a URL with one of these hashes loads that tab directly.
 
 The `BGG Top Games` tab includes an admin-only CSV upload control to store a BoardGameGeek dump file at `dist/db_storage/bgg_dump_latest.csv` for later processing.
-The same tab shows cards for each year from the current year down to 1990. Each card lists the top 10 games where `yearpublished` equals that card year, sorted by `rank` ascending (lowest rank first), and includes badges with the counts of that year's games in overall rank top 10 and top 100.
+The same tab shows cards for each year from the current year down to 1990. Each card lists the top 10 games where `yearpublished` equals that card year, sorted by `rank` ascending (lowest rank first), and includes badges with the counts of that year's games in overall rank top 10, top 100, and owned in your collection.
+Game rows are mapped against `dist/bgg.db` (`games.bggId`) and show an `Owned` label when `games.owned=1`.
+Above the year cards, a summary strip highlights years for key aggregates (most top-10/top-100/owned games, highest/lowest average geek rating, and rank-extreme years).
+When multiple years tie for a summary metric, all matching years are shown.
 Results are cached in `dist/db_storage/bgg_top_games_cache.json` and automatically invalidated when a new dump is uploaded.
 
 The `OnceUpon` tab also supports a date slug: `#onceupon/YYYY-MM-DD` (for example `#onceupon/2026-04-12`).

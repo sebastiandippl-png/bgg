@@ -123,16 +123,7 @@
                     count: Number(payload.count) || 0,
                 }];
 
-            const hasAnyGames = yearGroups.some(group => Array.isArray(group.games) && group.games.length > 0);
-            if (!hasAnyGames) {
-                const firstYear = Number(yearGroups[0] && yearGroups[0].year) || (new Date().getFullYear());
-                shell.innerHTML = '<div class="rounded-xl border border-gray-700/60 bg-gradient-to-br from-gray-900/80 to-gray-950/80 px-4 py-5">'
-                    + `<p class="text-sm text-gray-400">No games found for ${firstYear} and previous years in the uploaded CSV.</p>`
-                    + '</div>';
-                return;
-            }
-
-            const cards = yearGroups.map(group => {
+            const yearStats = yearGroups.map(group => {
                 const year = Number(group.year) || 0;
                 const games = Array.isArray(group.games) ? group.games : [];
                 const top10Count = Number.isFinite(Number(group.top10Count))
@@ -142,22 +133,167 @@
                         return Number.isFinite(rank) && rank <= 10 ? (sum + 1) : sum;
                     }, 0);
                 const top100Count = Math.max(0, Number(group.top100Count) || 0);
+                const ownedCount = games.reduce((sum, game) => ((game && game.owned === true) ? (sum + 1) : sum), 0);
+
+                let bestRank = null;
+                let geekRatingSum = 0;
+                let geekRatingCount = 0;
+                for (const game of games) {
+                    const rank = Number(game && game.rank);
+                    if (Number.isFinite(rank) && rank > 0) {
+                        bestRank = bestRank === null ? rank : Math.min(bestRank, rank);
+                    }
+
+                    const rating = Number(game && game.geek_rating);
+                    if (Number.isFinite(rating)) {
+                        geekRatingSum += rating;
+                        geekRatingCount += 1;
+                    }
+                }
+
+                const avgGeekRating = geekRatingCount > 0 ? (geekRatingSum / geekRatingCount) : null;
+
+                return {
+                    year,
+                    games,
+                    top10Count,
+                    top100Count,
+                    ownedCount,
+                    bestRank,
+                    avgGeekRating,
+                };
+            });
+
+            const hasAnyGames = yearStats.some(group => Array.isArray(group.games) && group.games.length > 0);
+            if (!hasAnyGames) {
+                const firstYear = Number(yearStats[0] && yearStats[0].year) || (new Date().getFullYear());
+                shell.innerHTML = '<div class="rounded-xl border border-gray-700/60 bg-gradient-to-br from-gray-900/80 to-gray-950/80 px-4 py-5">'
+                    + `<p class="text-sm text-gray-400">No games found for ${firstYear} and previous years in the uploaded CSV.</p>`
+                    + '</div>';
+                return;
+            }
+
+            function pickYearMetrics(getValue, mode) {
+                let bestValue = null;
+                const years = [];
+                for (const group of yearStats) {
+                    const value = getValue(group);
+                    if (!Number.isFinite(value)) {
+                        continue;
+                    }
+
+                    if (bestValue === null) {
+                        bestValue = value;
+                        years.push(group.year);
+                        continue;
+                    }
+
+                    if ((mode === 'max' && value > bestValue) || (mode === 'min' && value < bestValue)) {
+                        bestValue = value;
+                        years.length = 0;
+                        years.push(group.year);
+                        continue;
+                    }
+
+                    if (value === bestValue) {
+                        years.push(group.year);
+                    }
+                }
+
+                if (bestValue === null || years.length === 0) {
+                    return null;
+                }
+
+                return { years, value: bestValue };
+            }
+
+            const mostTop10 = pickYearMetrics(group => group.top10Count, 'max');
+            const mostTop100 = pickYearMetrics(group => group.top100Count, 'max');
+            const mostOwned = pickYearMetrics(group => group.ownedCount, 'max');
+            const highestAverage = pickYearMetrics(group => group.avgGeekRating, 'max');
+            const lowestAverage = pickYearMetrics(group => group.avgGeekRating, 'min');
+            const highestLowestRank = pickYearMetrics(group => group.bestRank, 'max');
+            const lowestRank = pickYearMetrics(group => group.bestRank, 'min');
+
+            function formatSummaryValue(metric, formatter) {
+                if (!metric) {
+                    return 'n/a';
+                }
+
+                const yearList = Array.isArray(metric.years) && metric.years.length > 0
+                    ? metric.years.join(', ')
+                    : 'n/a';
+                return `${yearList} (${formatter(metric.value)})`;
+            }
+
+            const summaryStats = [
+                {
+                    label: 'Year With Most Top 10 Games',
+                    value: formatSummaryValue(mostTop10, value => String(value)),
+                    tone: 'bg-fuchsia-500/15 text-fuchsia-200 border-fuchsia-500/30',
+                },
+                {
+                    label: 'Year With Most Top 100 Games',
+                    value: formatSummaryValue(mostTop100, value => String(value)),
+                    tone: 'bg-indigo-500/15 text-indigo-200 border-indigo-500/30',
+                },
+                {
+                    label: 'Year With Most Owned Games',
+                    value: formatSummaryValue(mostOwned, value => String(value)),
+                    tone: 'bg-lime-500/15 text-lime-200 border-lime-500/30',
+                },
+                {
+                    label: 'Year With Highest Average',
+                    value: formatSummaryValue(highestAverage, value => Number(value).toFixed(5)),
+                    tone: 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30',
+                },
+                {
+                    label: 'Year With Lowest Average',
+                    value: formatSummaryValue(lowestAverage, value => Number(value).toFixed(5)),
+                    tone: 'bg-amber-500/15 text-amber-200 border-amber-500/30',
+                },
+                {
+                    label: 'Year With Highest Lowest Rank',
+                    value: formatSummaryValue(highestLowestRank, value => `#${String(value)}`),
+                    tone: 'bg-rose-500/15 text-rose-200 border-rose-500/30',
+                },
+                {
+                    label: 'Year With Lowest Rank',
+                    value: formatSummaryValue(lowestRank, value => `#${String(value)}`),
+                    tone: 'bg-sky-500/15 text-sky-200 border-sky-500/30',
+                },
+            ];
+
+            const summaryHtml = '<div class="rounded-xl border border-gray-700/70 bg-gradient-to-br from-gray-900/80 to-gray-950/80 px-4 py-4 mb-4">'
+                + '<p class="text-xs uppercase tracking-[0.18em] text-gray-400 mb-3">Summary</p>'
+                + '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">'
+                + summaryStats.map(item => '<div class="rounded-lg border px-3 py-2 ' + item.tone + '">'
+                    + `<p class="text-[11px] uppercase tracking-wide opacity-90">${escapeHTML(item.label)}</p>`
+                    + `<p class="text-sm font-semibold mt-1">${escapeHTML(item.value)}</p>`
+                    + '</div>').join('')
+                + '</div>'
+                + '</div>';
+
+            const cards = yearStats.map(group => {
+                const year = Number(group.year) || 0;
+                const games = Array.isArray(group.games) ? group.games : [];
+                const top10Count = Math.max(0, Number(group.top10Count) || 0);
+                const top100Count = Math.max(0, Number(group.top100Count) || 0);
+                const ownedCount = Math.max(0, Number(group.ownedCount) || 0);
                 if (games.length === 0) {
                     return '<div class="rounded-xl border border-gray-700/60 bg-gradient-to-br from-gray-900/80 to-gray-950/80 px-4 py-4">'
                         + '<div class="flex flex-wrap items-center gap-2">'
                         + `<div class="text-xs uppercase tracking-[0.18em] text-rose-300">Top 10 of ${year}</div>`
                     + `<span class="rounded-full bg-fuchsia-500/15 text-fuchsia-200 px-2.5 py-1 border border-fuchsia-500/30 text-[11px]">Top 10 Overall: ${top10Count}</span>`
                         + `<span class="rounded-full bg-indigo-500/15 text-indigo-200 px-2.5 py-1 border border-indigo-500/30 text-[11px]">Top 100 Overall: ${top100Count}</span>`
+                        + `<span class="rounded-full bg-lime-500/15 text-lime-200 px-2.5 py-1 border border-lime-500/30 text-[11px]">Owned: ${ownedCount}</span>`
                         + '</div>'
                         + `<p class="mt-2 text-sm text-gray-400">No ranked games found for ${year}.</p>`
                         + '</div>';
                 }
 
-                const topRank = Number(games[0].rank) || 0;
-                const avgGeekRating = games.reduce((sum, game) => {
-                    const value = Number(game.geek_rating);
-                    return Number.isFinite(value) ? (sum + value) : sum;
-                }, 0) / Math.max(games.length, 1);
+                const topRank = Number(group.bestRank) || 0;
+                const avgGeekRating = Number(group.avgGeekRating);
 
                 const rows = games.map(game => {
                     const gameId = Number(game.id) || 0;
@@ -167,6 +303,7 @@
                     const geekRating = Number.isFinite(geekRatingValue)
                         ? geekRatingValue.toFixed(5)
                         : 'n/a';
+                    const owned = game && game.owned === true;
                     const href = gameId > 0
                         ? `https://boardgamegeek.com/boardgame/${gameId}`
                         : 'https://boardgamegeek.com';
@@ -184,7 +321,12 @@
                         + '<td class="px-3 py-3">'
                         + `<span class="inline-flex min-w-[2.2rem] justify-center rounded-full px-2 py-1 text-xs font-semibold ${rankTone}">${rank}</span>`
                         + '</td>'
-                        + `<td class="px-3 py-3 text-gray-100"><a href="${href}" target="_blank" rel="noopener noreferrer" class="hover:text-sky-300 underline decoration-slate-500/60 underline-offset-2">${gameName}</a></td>`
+                        + '<td class="px-3 py-3 text-gray-100">'
+                        + '<div class="flex items-center gap-2">'
+                        + `<a href="${href}" target="_blank" rel="noopener noreferrer" class="hover:text-sky-300 underline decoration-slate-500/60 underline-offset-2">${gameName}</a>`
+                        + (owned ? '<span class="rounded-full bg-lime-500/15 text-lime-200 px-2 py-0.5 border border-lime-500/35 text-[10px] font-semibold uppercase tracking-wide">Owned</span>' : '')
+                        + '</div>'
+                        + '</td>'
                         + `<td class="px-3 py-3 text-gray-200 font-medium">${escapeHTML(geekRating)}</td>`
                         + '</tr>';
                 }).join('');
@@ -197,6 +339,7 @@
                     + `<span class="rounded-full bg-sky-500/15 text-sky-200 px-2.5 py-1 border border-sky-500/30">Best Rank: #${topRank || 'n/a'}</span>`
                     + `<span class="rounded-full bg-fuchsia-500/15 text-fuchsia-200 px-2.5 py-1 border border-fuchsia-500/30">Top 10 Overall: ${top10Count}</span>`
                     + `<span class="rounded-full bg-indigo-500/15 text-indigo-200 px-2.5 py-1 border border-indigo-500/30">Top 100 Overall: ${top100Count}</span>`
+                    + `<span class="rounded-full bg-lime-500/15 text-lime-200 px-2.5 py-1 border border-lime-500/30">Owned: ${ownedCount}</span>`
                     + `<span class="rounded-full bg-emerald-500/15 text-emerald-200 px-2.5 py-1 border border-emerald-500/30">Avg Geek Rating: ${Number.isFinite(avgGeekRating) ? avgGeekRating.toFixed(5) : 'n/a'}</span>`
                     + '</div>'
                     + '</div>'
@@ -234,6 +377,7 @@
                 + cacheBadge
                 + '</div>'
                 + '</div>'
+                + summaryHtml
                 + `<div class="grid grid-cols-1 gap-4">${cards}</div>`;
         } catch (_) {
             shell.innerHTML = '<div class="rounded-xl border border-rose-500/30 bg-rose-950/20 px-4 py-3">'

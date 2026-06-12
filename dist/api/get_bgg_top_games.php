@@ -9,9 +9,10 @@ header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
 const BGG_TOP_GAMES_DUMP_FILE = __DIR__ . '/../db_storage/bgg_dump_latest.csv';
+const BGG_TOP_GAMES_DB_FILE = __DIR__ . '/../bgg.db';
 const BGG_TOP_GAMES_CACHE_FILE = __DIR__ . '/../db_storage/bgg_top_games_cache.json';
 const BGG_TOP_GAMES_MIN_YEAR = 1990;
-const BGG_TOP_GAMES_CACHE_VERSION = 3;
+const BGG_TOP_GAMES_CACHE_VERSION = 4;
 
 $requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
 if ($requestedWith !== 'xmlhttprequest') {
@@ -35,6 +36,10 @@ if ($dumpMtime === false || $dumpSize === false) {
     exit;
 }
 
+$dbPath = BGG_TOP_GAMES_DB_FILE;
+$dbMtime = is_file($dbPath) ? @filemtime($dbPath) : null;
+$dbSize = is_file($dbPath) ? @filesize($dbPath) : null;
+
 $currentYear = (int)gmdate('Y');
 $targetYears = [];
 for ($year = $currentYear; $year >= BGG_TOP_GAMES_MIN_YEAR; $year--) {
@@ -48,10 +53,12 @@ if (is_file(BGG_TOP_GAMES_CACHE_FILE) && is_readable(BGG_TOP_GAMES_CACHE_FILE)) 
         $cacheData = json_decode($cacheRaw, true);
         if (
             is_array($cacheData)
-            && isset($cacheData['cacheVersion'], $cacheData['dumpMtime'], $cacheData['dumpSize'], $cacheData['payload'])
+            && isset($cacheData['cacheVersion'], $cacheData['dumpMtime'], $cacheData['dumpSize'], $cacheData['dbMtime'], $cacheData['dbSize'], $cacheData['payload'])
             && (int)$cacheData['cacheVersion'] === BGG_TOP_GAMES_CACHE_VERSION
             && (int)$cacheData['dumpMtime'] === (int)$dumpMtime
             && (int)$cacheData['dumpSize'] === (int)$dumpSize
+            && (int)$cacheData['dbMtime'] === (int)$dbMtime
+            && (int)$cacheData['dbSize'] === (int)$dbSize
             && is_array($cacheData['payload'])
         ) {
             $cachedPayload = $cacheData['payload'];
@@ -63,6 +70,24 @@ if ($cachedPayload !== null) {
     $cachedPayload['cached'] = true;
     echo json_encode($cachedPayload);
     exit;
+}
+
+$ownedBggIds = [];
+if (is_file($dbPath) && is_readable($dbPath)) {
+    $db = @new SQLite3($dbPath, SQLITE3_OPEN_READONLY);
+    if ($db instanceof SQLite3) {
+        $query = @ $db->query('SELECT bggId, owned FROM games WHERE bggId IS NOT NULL');
+        if ($query instanceof SQLite3Result) {
+            while (($row = $query->fetchArray(SQLITE3_ASSOC)) !== false) {
+                $bggIdValue = isset($row['bggId']) ? (int)$row['bggId'] : 0;
+                $ownedValue = isset($row['owned']) ? (int)$row['owned'] : 0;
+                if ($bggIdValue > 0 && $ownedValue === 1) {
+                    $ownedBggIds[$bggIdValue] = true;
+                }
+            }
+        }
+        $db->close();
+    }
 }
 
 $handle = @fopen($csvPath, 'rb');
@@ -134,6 +159,7 @@ while (($row = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
         'yearpublished' => $year,
         'rank' => $rank,
         'geek_rating' => $geekRating,
+        'owned' => isset($ownedBggIds[$bggId]),
     ];
 }
 
@@ -195,6 +221,8 @@ $responsePayload = [
         'cacheVersion' => BGG_TOP_GAMES_CACHE_VERSION,
         'dumpMtime' => (int)$dumpMtime,
         'dumpSize' => (int)$dumpSize,
+        'dbMtime' => (int)$dbMtime,
+        'dbSize' => (int)$dbSize,
         'payload' => $responsePayload,
     ]),
     LOCK_EX

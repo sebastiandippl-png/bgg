@@ -100,6 +100,7 @@ Behavior:
 - Builds year buckets for `currentYear` through `1990` (UTC).
 - Filters rows where `yearpublished` equals each bucket year.
 - Sorts each year bucket by `rank` ascending and returns top 10 per year.
+- Maps each game against `games.bggId` in `dist/bgg.db` and exposes `owned=true` when `games.owned=1`.
 - Adds `top10Count` per year for games in that year whose overall rank is `<= 10`.
 - Adds `top100Count` per year for games in that year whose overall rank is `<= 100`.
 - Caches computed payload in `dist/db_storage/bgg_top_games_cache.json` keyed by dump file mtime/size.
@@ -119,7 +120,8 @@ Response on success:
       "name": "Example Game",
       "yearpublished": 2026,
       "rank": 17,
-      "geek_rating": 7.53214
+      "geek_rating": 7.53214,
+      "owned": true
     }
   ],
   "years": [

@@ -20,6 +20,39 @@
 - `dist/api/get_bgg_top_games.php`
 - `dist/api/upload_bgg_dump.php`
 
+### Keep BGG Top Summary Metrics Derived From Same Year Stats
+
+**Rule**: The summary strip in the BGG Top Games tab should be computed from the same normalized per-year stats used by each year card.
+
+**Why**:
+- Prevents inconsistencies between card badges and summary values
+- Makes tie-breaking and fallback handling deterministic
+
+**Code Location**:
+- `dist/js/tabs/bggtopgames.js`
+
+### Show All Tied Years In BGG Top Summary
+
+**Rule**: Summary metrics in BGG Top Games should list all years that share the same winning value, not a single tie-broken year.
+
+**Why**:
+- Preserves correctness for tied aggregates (for example equal owned counts)
+- Avoids misleading single-year output when multiple years satisfy the condition
+
+**Code Location**:
+- `dist/js/tabs/bggtopgames.js`
+
+### Include DB Fingerprint In BGG Top Games Cache Key
+
+**Rule**: When BGG Top Games response includes ownership flags from `dist/bgg.db`, cache validity must include both dump and DB fingerprints.
+
+**Why**:
+- Ownership can change after collection sync without CSV changes
+- Prevents stale `Owned` badges when only SQLite data changed
+
+**Code Location**:
+- `dist/api/get_bgg_top_games.php`
+
 ### Keep Timeline X-Axis Baselines Consistent
 
 **Rule**: Month-based play diagrams should use a shared baseline start (`2017-01`) instead of each chart starting at its own first non-zero month.

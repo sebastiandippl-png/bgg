@@ -160,7 +160,10 @@ For quick updates between full syncs, admin can use Delta Sync actions:
   - Writes upload atomically to `dist/db_storage/bgg_dump_latest.csv`
   - Invalidates `dist/db_storage/bgg_top_games_cache.json` immediately after successful upload
   - Lists top 10 games where `yearpublished` equals each card year (current year down to 1990), sorted by `rank` ascending
-  - Shows per-year badges with how many games from that year are in the overall top 10 and top 100 ranks
+  - Shows per-year badges with how many games from that year are in the overall top 10 and top 100 ranks, and how many are owned in local collection data
+  - Maps card rows to local collection ownership via `dist/bgg.db` (`games.bggId`, `games.owned`) and shows an `Owned` badge per game row
+  - Shows a top summary strip for year-level aggregates (most top-10/top-100/owned counts, highest/lowest averages, and rank extremes)
+  - Summary entries show all years when multiple years tie on the same aggregate value
   - Caches parsed results in `dist/db_storage/bgg_top_games_cache.json` and reuses them until the dump changes
 
 ### WantToBuy Tab Flow
