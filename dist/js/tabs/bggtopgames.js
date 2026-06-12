@@ -450,17 +450,8 @@
             return;
         }
 
-        target.innerHTML = `
-            <section class="rounded-xl border border-rose-900/40 bg-gradient-to-br from-gray-900/70 via-gray-900/55 to-gray-950/75 p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-semibold text-rose-300">BGG Top Games</h2>
-                            <p class="mt-1 text-xs text-gray-500 uppercase tracking-[0.2em]">Live from uploaded CSV</p>
-                            <p id="bgg-top-games-admin-hint" class="mt-2 text-xs sm:text-sm text-gray-400"></p>
-                        </div>
-                        <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">From Current Year To 1990</span>
-                    </div>
+        const uploadSection = isAdminUser()
+            ? `
                     <form id="bgg-top-games-upload-form" class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/35 p-3 sm:p-4">
                         <label for="bgg-top-games-upload-input" class="text-xs sm:text-sm text-gray-300">BoardGameGeek CSV dump</label>
                         <input id="bgg-top-games-upload-input" name="dump_csv" type="file" accept=".csv,text/csv" class="block w-full rounded-md border border-gray-700 bg-gray-800/80 px-3 py-2 text-sm text-gray-200 file:mr-3 file:rounded file:border-0 file:bg-gray-700 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-100 hover:file:bg-gray-600">
@@ -472,15 +463,35 @@
                         </div>
                         <p id="bgg-top-games-upload-status" class="mt-1 text-sm text-gray-400"></p>
                     </form>
+            `
+            : '';
+
+        target.innerHTML = `
+            <section class="rounded-xl border border-rose-900/40 bg-gradient-to-br from-gray-900/70 via-gray-900/55 to-gray-950/75 p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-semibold text-rose-300">BGG Top Games</h2>
+                            <p class="mt-1 text-xs text-gray-500 uppercase tracking-[0.2em]">Live from uploaded CSV</p>
+                        </div>
+                        <span class="hidden sm:inline-flex rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-200">From Current Year To 1990</span>
+                    </div>
+                    ${uploadSection}
                     <div id="bgg-top-games-results" class="mt-2"></div>
                 </div>
             </section>
         `;
 
-        bindUploadForm();
-        updateAdminUiState();
+        if (isAdminUser()) {
+            bindUploadForm();
+        }
         loadTopGames();
     };
 
-    window.addEventListener('bgstats:auth-changed', updateAdminUiState);
+    window.addEventListener('bgstats:auth-changed', function handleAuthChanged() {
+        const content = document.getElementById('content-bggtopgames');
+        if (content && !content.classList.contains('hidden')) {
+            window.renderBggTopGamesTab({ targetId: 'bggtopgames-content' });
+        }
+    });
 })();
